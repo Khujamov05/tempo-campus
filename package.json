@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy": "npm test && npm run build && node scripts/publish.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.53.0",
