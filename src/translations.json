@@ -1,0 +1,350 @@
+{
+  "Tempo — твой учебный ритм": ["Tempo — o‘qish ritmingiz", "Tempo — your study rhythm"],
+  "Расписание": ["Dars jadvali", "Schedule"],
+  "Предметы": ["Fanlar", "Subjects"],
+  "Преподаватели": ["O‘qituvchilar", "Teachers"],
+  "Настройки": ["Sozlamalar", "Settings"],
+  "ТВОЁ ПРОСТРАНСТВО": ["SIZNING MAKONINGIZ", "YOUR WORKSPACE"],
+  "Закрыть окно": ["Oynani yopish", "Close dialog"],
+  "Детали занятия": ["Dars tafsilotlari", "Lesson details"],
+  "Новое занятие": ["Yangi dars", "New lesson"],
+  "Немного порядка для продуктивной недели.": [
+    "Samarali hafta uchun qulay reja.",
+    "A little structure for a productive week."
+  ],
+  "Предмет": ["Fan", "Subject"],
+  "Группа": ["Guruh", "Group"],
+  "Формат": ["Dars turi", "Lesson type"],
+  "День недели": ["Hafta kuni", "Day of the week"],
+  "Повторение": ["Takrorlanishi", "Repeat"],
+  "Начало": ["Boshlanishi", "Start"],
+  "Окончание": ["Tugashi", "End"],
+  "Аудитория": ["Xona", "Room"],
+  "Например, 301": ["Masalan, 301", "For example, 301"],
+  "Заметка": ["Izoh", "Note"],
+  "необязательно": ["ixtiyoriy", "optional"],
+  "Что подготовить к занятию?": ["Darsga nima tayyorlash kerak?", "What should you prepare?"],
+  "Удалить это занятие из всех недель?": [
+    "Bu dars barcha haftalardan o‘chirilsinmi?",
+    "Delete this lesson from every week?"
+  ],
+  "Да, удалить занятие": ["Ha, darsni o‘chirish", "Yes, delete lesson"],
+  "Отмена": ["Bekor qilish", "Cancel"],
+  "Удалить занятие": ["Darsni o‘chirish", "Delete lesson"],
+  "Сохранить изменения": ["O‘zgarishlarni saqlash", "Save changes"],
+  "Добавить занятие": ["Dars qo‘shish", "Add lesson"],
+  "Заполните все поля.": ["Barcha maydonlarni to‘ldiring.", "Please fill in all fields."],
+  "Такое название уже существует.": ["Bu nom allaqachon mavjud.", "This name already exists."],
+  "Новый предмет": ["Yangi fan", "New subject"],
+  "Новый преподаватель": ["Yangi o‘qituvchi", "New teacher"],
+  "Новая группа": ["Yangi guruh", "New group"],
+  "Фамилия, имя и отчество": ["Familiya, ism va otasining ismi", "Full name"],
+  "Название": ["Nomi", "Name"],
+  "Например, Дискретная математика": [
+    "Masalan, Diskret matematika",
+    "For example, Discrete mathematics"
+  ],
+  "Введите полное имя": ["To‘liq ismni kiriting", "Enter the full name"],
+  "Например, KI-23": ["Masalan, KI-23", "For example, KI-23"],
+  "Код предмета": ["Fan kodi", "Subject code"],
+  "Кафедра": ["Kafedra", "Department"],
+  "Направление и курс": ["Yo‘nalish va bosqich", "Programme and year"],
+  "Компьютерные науки": ["Kompyuter ilmlari", "Computer science"],
+  "Информационные системы · 2 курс": [
+    "Axborot tizimlari · 2-bosqich",
+    "Information systems · Year 2"
+  ],
+  "Преподаватель": ["O‘qituvchi", "Teacher"],
+  "Преподаватель не указан": ["O‘qituvchi ko‘rsatilmagan", "Teacher not assigned"],
+  "Цвет в расписании": ["Jadvaldagi rang", "Schedule colour"],
+  "Цвет {color}": ["{color} rangi", "{color} colour"],
+  "Добавить": ["Qo‘shish", "Add"],
+  "Лекция": ["Ma’ruza", "Lecture"],
+  "Практика": ["Amaliy", "Practice"],
+  "Семинар": ["Seminar", "Seminar"],
+  "Лабораторная": ["Laboratoriya", "Laboratory"],
+  "Лаб.": ["Lab.", "Lab"],
+  "Каждую неделю": ["Har hafta", "Every week"],
+  "Нечётные недели": ["Toq haftalar", "Odd weeks"],
+  "Чётные недели": ["Juft haftalar", "Even weeks"],
+  "Понедельник": ["Dushanba", "Monday"],
+  "Вторник": ["Seshanba", "Tuesday"],
+  "Среда": ["Chorshanba", "Wednesday"],
+  "Четверг": ["Payshanba", "Thursday"],
+  "Пятница": ["Juma", "Friday"],
+  "Суббота": ["Shanba", "Saturday"],
+  "Пн": ["Du", "Mon"],
+  "Вт": ["Se", "Tue"],
+  "Ср": ["Ch", "Wed"],
+  "Чт": ["Pa", "Thu"],
+  "Пт": ["Ju", "Fri"],
+  "Сб": ["Sh", "Sat"],
+  "Не удалось сохранить изменения в браузере. Скачайте резервную копию в настройках, чтобы не потерять данные.": [
+    "O‘zgarishlarni brauzerda saqlab bo‘lmadi. Ma’lumotlarni yo‘qotmaslik uchun sozlamalardan zaxira nusxasini yuklab oling.",
+    "Changes could not be saved in this browser. Download a backup in Settings to avoid losing them."
+  ],
+  "Изменения сохранены": ["O‘zgarishlar saqlandi", "Changes saved"],
+  "Занятие добавлено в расписание": ["Dars jadvalga qo‘shildi", "Lesson added to the schedule"],
+  "Занятие удалено": ["Dars o‘chirildi", "Lesson deleted"],
+  "Календарь выбранных занятий скачан": [
+    "Tanlangan darslar taqvimi yuklab olindi",
+    "Selected lessons downloaded"
+  ],
+  "Файл слишком большой. Максимум — 2 МБ.": [
+    "Fayl juda katta. Eng katta hajm — 2 MB.",
+    "File too large. Maximum size: 2 MB."
+  ],
+  "Не удалось импортировать файл": ["Faylni import qilib bo‘lmadi", "Could not import the file"],
+  "Закрыть меню": ["Menyuni yopish", "Close menu"],
+  "Мой кампус": ["Mening kampusim", "My campus"],
+  "Учебное пространство": ["O‘quv makoni", "Study workspace"],
+  "ОРГАНИЗУЙ СВОЙ ДЕНЬ": ["KUNINGIZNI REJALASHTIRING", "PLAN YOUR DAY"],
+  "Основная навигация": ["Asosiy menyu", "Main navigation"],
+  "Поймай свой ритм.": ["O‘z ritmingizni toping.", "Find your rhythm."],
+  "Когда всё на своих местах,": ["Har narsa o‘z o‘rnida bo‘lsa,", "When everything is in place,"],
+  "остаётся время на главное.": ["muhim ishlarga vaqt qoladi.", "there is time for what matters."],
+  "Знакомство с Tempo": ["Tempo bilan tanishing", "Meet Tempo"],
+  "В твоём ритме": ["Sizning ritmingizda", "At your pace"],
+  "Открыть меню": ["Menyuni ochish", "Open menu"],
+  "Помощь": ["Yordam", "Help"],
+  "Личное пространство": ["Shaxsiy makon", "Personal workspace"],
+  "МЕНЬШЕ ХАОСА. БОЛЬШЕ ФОКУСА.": ["ANIQ REJA. KO‘PROQ IMKONIYAT.", "LESS CHAOS. MORE FOCUS."],
+  "ВСЁ В ОДНОМ МЕСТЕ": ["BARCHASI BIR JOYDA", "EVERYTHING IN ONE PLACE"],
+  "Твоя неделя в порядке": ["Haftangiz tartibda", "Your week, in order"],
+  "Учись, планируй и находи время для себя.": [
+    "O‘qing, rejalashtiring va o‘zingizga vaqt ajrating.",
+    "Study, plan and make time for yourself."
+  ],
+  "Все дисциплины и их место в твоём расписании.": [
+    "Barcha fanlar va ularning jadvalingizdagi o‘rni.",
+    "All your subjects and their place in your schedule."
+  ],
+  "Те, кто помогает двигаться вперёд.": [
+    "Bilim sari yo‘l ko‘rsatuvchi ustozlar.",
+    "The people who help you move forward."
+  ],
+  "Твоё пространство работает по твоим правилам.": [
+    "Makoningiz — sizning qoidalaringiz.",
+    "Your workspace, your rules."
+  ],
+  "Добавить предмет": ["Fan qo‘shish", "Add subject"],
+  "Добавить преподавателя": ["O‘qituvchi qo‘shish", "Add teacher"],
+  "Локальное пространство": ["Shaxsiy makon", "Local workspace"],
+  "Обзор недели": ["Hafta sharhi", "Week overview"],
+  "На этой неделе": ["Shu haftada", "This week"],
+  "занятие": ["dars", "lesson"],
+  "занятия": ["dars", "lessons"],
+  "занятий": ["dars", "lessons"],
+  "Время учиться": ["O‘qish vaqti", "Study time"],
+  "часов": ["soat", "hours"],
+  "В фокусе": ["Diqqat markazida", "In focus"],
+  "предмет": ["fan", "subject"],
+  "предмета": ["fan", "subjects"],
+  "предметов": ["fan", "subjects"],
+  "Время для себя": ["O‘zingiz uchun vaqt", "Time for yourself"],
+  "свободный день": ["bo‘sh kun", "free day"],
+  "свободных дня": ["bo‘sh kun", "free days"],
+  "свободных дней": ["bo‘sh kun", "free days"],
+  "Расписание занятий": ["Dars jadvali", "Lesson schedule"],
+  "Предыдущая неделя": ["Oldingi hafta", "Previous week"],
+  "Следующая неделя": ["Keyingi hafta", "Next week"],
+  "Сегодня": ["Bugun", "Today"],
+  "Вид расписания": ["Jadval ko‘rinishi", "Schedule view"],
+  "Неделя": ["Hafta", "Week"],
+  "Список": ["Ro‘yxat", "List"],
+  "Учебная группа": ["O‘quv guruhi", "Study group"],
+  "Формат занятий": ["Dars turi", "Lesson type"],
+  "Все занятия": ["Barcha darslar", "All lessons"],
+  "Чётная неделя": ["Juft hafta", "Even week"],
+  "Нечётная неделя": ["Toq hafta", "Odd week"],
+  "Поиск в расписании": ["Jadvaldan qidirish", "Search schedule"],
+  "Найти занятие…": ["Darsni topish…", "Find a lesson…"],
+  "Очистить поиск": ["Qidiruvni tozalash", "Clear search"],
+  "Скачать календарь ICS": ["ICS taqvimini yuklab olish", "Download ICS calendar"],
+  "Скачать выбранные занятия в календарь": [
+    "Tanlangan darslarni taqvimga yuklash",
+    "Download selected lessons to your calendar"
+  ],
+  "Ничего не нашлось": ["Hech narsa topilmadi", "Nothing found"],
+  "Неделя — чистый лист": ["Hafta hali bo‘sh", "A fresh week"],
+  "Попробуй другой запрос или убери фильтры.": [
+    "Boshqa so‘z bilan qidiring yoki filtrlarni olib tashlang.",
+    "Try another search or clear the filters."
+  ],
+  "Добавь первое занятие и задай свой ритм.": [
+    "Birinchi darsni qo‘shing va o‘z ritmingizni yarating.",
+    "Add your first lesson and set your pace."
+  ],
+  "Сбросить фильтры": ["Filtrlarni tozalash", "Clear filters"],
+  "ВРЕМЯ": ["VAQT", "TIME"],
+  "Можно выдохнуть": ["Dam olish mumkin", "Take a breather"],
+  "День без занятий": ["Darslarsiz kun", "A day without lessons"],
+  "Точные науки": ["Boshqaruv", "Management"],
+  "Технологии": ["Texnologiyalar", "Technology"],
+  "И не только": ["Va boshqa fanlar", "And more"],
+  "время местное": ["mahalliy vaqt", "local time"],
+  "Сейчас": ["Hozir", "Now"],
+  "Далее": ["Keyingi", "Next"],
+  "ауд.": ["xona", "room"],
+  "Всё под контролем. Хорошее время для своих планов.": [
+    "Hammasi joyida. Shaxsiy rejalaringizga vaqt ajrating.",
+    "All set. A good time for your own plans."
+  ],
+  "Новая неделя — новые возможности.": [
+    "Yangi hafta — yangi imkoniyatlar.",
+    "A new week, new possibilities."
+  ],
+  "Как это работает": ["Qanday ishlaydi", "How it works"],
+  "{count} дисциплин в пространстве": ["{count} ta fan", "{count} subjects in your workspace"],
+  "{count} преподавателей в пространстве": [
+    "{count} nafar o‘qituvchi",
+    "{count} teachers in your workspace"
+  ],
+  "Поиск по справочнику": ["Ro‘yxatdan qidirish", "Search directory"],
+  "Найти предмет…": ["Fanni topish…", "Find a subject…"],
+  "Найти преподавателя…": ["O‘qituvchini topish…", "Find a teacher…"],
+  "в неделю ·": ["haftasiga ·", "per week ·"],
+  "Показать занятия: {subject}": ["Darslarni ko‘rish: {subject}", "Show lessons: {subject}"],
+  "Занятия ·": ["Darslar ·", "Lessons ·"],
+  "Попробуй изменить поисковый запрос.": [
+    "Qidiruv so‘zini o‘zgartirib ko‘ring.",
+    "Try changing your search."
+  ],
+  "Учебные группы": ["O‘quv guruhlari", "Study groups"],
+  "Разные направления — одно удобное пространство.": [
+    "Turli yo‘nalishlar — bitta qulay makon.",
+    "Different programmes, one convenient workspace."
+  ],
+  "Добавить группу": ["Guruh qo‘shish", "Add group"],
+  "Твои данные — с тобой": ["Ma’lumotlaringiz o‘zingiz bilan", "Your data, with you"],
+  "Расписание сохраняется в этом браузере. Скачай копию, чтобы перенести его на другое устройство или сохранить перед очисткой браузера.": [
+    "Jadval shu brauzerda saqlanadi. Uni boshqa qurilmaga o‘tkazish yoki brauzerni tozalashdan oldin saqlab qolish uchun nusxasini yuklab oling.",
+    "Your schedule is stored in this browser. Download a backup to move it to another device or before clearing browser data."
+  ],
+  "Резервная копия скачана": ["Zaxira nusxasi yuklab olindi", "Backup downloaded"],
+  "Скачать копию JSON": ["JSON nusxasini yuklab olish", "Download JSON backup"],
+  "Импортировать копию": ["Nusxani import qilish", "Import backup"],
+  "Без регистрации и внешних сервисов": [
+    "Ro‘yxatdan o‘tish talab qilinmaydi",
+    "No registration or external services"
+  ],
+  "Начать с примера": ["Namunadan boshlash", "Start with an example"],
+  "Восстановить демонстрационные предметы, группы и занятия. Текущие данные будут заменены.": [
+    "Boshlang‘ich fanlar, guruhlar va darslar tiklanadi. Joriy ma’lumotlar almashtiriladi.",
+    "Restore the starter subjects, groups and lessons. Current data will be replaced."
+  ],
+  "Восстановить демоданные": ["Boshlang‘ich ma’lumotlarni tiklash", "Restore starter data"],
+  "Личный планировщик. Данные не синхронизируются между устройствами.": [
+    "Shaxsiy rejalashtirgich. Ma’lumotlar qurilmalar orasida sinxronlanmaydi.",
+    "Personal planner. Data does not sync between devices."
+  ],
+  "С заботой о твоём времени": ["Vaqtingizni qadrlaymiz", "Made for your time"],
+  "Больше, чем просто планы.": ["Oddiy rejadan ko‘proq.", "More than just plans."],
+  "Добавлено в пространство": ["Makonga qo‘shildi", "Added to your workspace"],
+  "Привет, это Tempo.": ["Salom, bu Tempo.", "Hello, this is Tempo."],
+  "Маленькое пространство для больших планов.": [
+    "Katta rejalar uchun qulay makon.",
+    "A little space for big plans."
+  ],
+  "Собери свою неделю": ["Haftangizni rejalashtiring", "Plan your week"],
+  "Выбери группу и добавь занятия. Расписание повторяется каждую неделю или по её чётности (ISO).": [
+    "Guruhni tanlang va darslarni qo‘shing. Jadval har hafta yoki ISO bo‘yicha juft/toq haftalarda takrorlanadi.",
+    "Choose a group and add lessons. The schedule repeats every week or on odd/even ISO weeks."
+  ],
+  "Всё можно поправить": ["O‘zgartirish oson", "Easy to change"],
+  "Нажми на занятие, чтобы изменить время, аудиторию или оставить заметку. Пересечения проверяются автоматически.": [
+    "Vaqt, xona yoki izohni o‘zgartirish uchun darsni bosing. To‘qnashuvlar avtomatik tekshiriladi.",
+    "Click a lesson to change its time, room or note. Conflicts are checked automatically."
+  ],
+  "Возьми планы с собой": ["Rejalaringiz yoningizda", "Take your plans with you"],
+  "Стрелка рядом с поиском скачивает видимые занятия выбранной недели в формате ICS для Apple, Google и других календарей.": [
+    "Qidiruv yonidagi tugma tanlangan haftadagi ko‘rinib turgan darslarni Apple, Google va boshqa taqvimlar uchun ICS formatida yuklab beradi.",
+    "The arrow next to search downloads visible lessons for the selected week as an ICS file for Apple, Google and other calendars."
+  ],
+  "Только в этом браузере": ["Faqat shu brauzerda", "Only in this browser"],
+  "Это личное пространство без сервера и входа. Делай резервные копии в настройках; синхронизации между устройствами нет.": [
+    "Bu serversiz va kirish talab qilinmaydigan shaxsiy makon. Sozlamalarda zaxira nusxalarini yarating; qurilmalar orasida sinxronlash yo‘q.",
+    "This is a personal workspace without a server or sign-in. Make backups in Settings; data does not sync across devices."
+  ],
+  "Поймать свой ритм": ["O‘z ritmimni topish", "Find my rhythm"],
+  "Восстановить демоданные?": ["Boshlang‘ich ma’lumotlar tiklansinmi?", "Restore starter data?"],
+  "Заменить данные из копии?": [
+    "Ma’lumotlar nusxadan almashtirilsinmi?",
+    "Replace data from backup?"
+  ],
+  "Текущее расписание, предметы, преподаватели и группы будут заменены. Сначала можно скачать резервную копию.": [
+    "Joriy jadval, fanlar, o‘qituvchilar va guruhlar almashtiriladi. Avval zaxira nusxasini yuklab olishingiz mumkin.",
+    "Your current schedule, subjects, teachers and groups will be replaced. You can download a backup first."
+  ],
+  "Скачать текущую копию": ["Joriy nusxani yuklab olish", "Download current backup"],
+  "Данные обновлены": ["Ma’lumotlar yangilandi", "Data updated"],
+  "Заменить данные": ["Ma’lumotlarni almashtirish", "Replace data"],
+  "Занятие восстановлено": ["Dars tiklandi", "Lesson restored"],
+  "Вернуть": ["Qaytarish", "Undo"],
+  "Закрыть уведомление": ["Bildirishnomani yopish", "Dismiss notification"],
+  "Выберите предмет и группу.": ["Fan va guruhni tanlang.", "Choose a subject and a group."],
+  "Выберите преподавателя из справочника.": [
+    "Ro‘yxatdan o‘qituvchini tanlang.",
+    "Choose a teacher from the directory."
+  ],
+  "Выберите день с понедельника по субботу.": [
+    "Dushanbadan shanbagacha bo‘lgan kunni tanlang.",
+    "Choose a day from Monday to Saturday."
+  ],
+  "Окончание занятия должно быть позже начала.": [
+    "Dars tugashi boshlanishidan keyin bo‘lishi kerak.",
+    "The lesson must end after it starts."
+  ],
+  "Занятия доступны с 08:00 до 20:00.": [
+    "Darslar 08:00 dan 20:00 gacha bo‘lishi mumkin.",
+    "Lessons must be between 08:00 and 20:00."
+  ],
+  "Минимальная длительность занятия — 30 минут.": [
+    "Darsning eng qisqa davomiyligi — 30 daqiqa.",
+    "The minimum lesson duration is 30 minutes."
+  ],
+  "Укажите аудиторию (до 60 символов).": [
+    "Xonani ko‘rsating (60 ta belgigacha).",
+    "Enter a room (up to 60 characters)."
+  ],
+  "Проверьте формат и периодичность занятия.": [
+    "Dars turi va takrorlanishini tekshiring.",
+    "Check the lesson type and repeat schedule."
+  ],
+  "Заметка должна быть не длиннее 1000 символов.": [
+    "Izoh 1000 ta belgidan oshmasligi kerak.",
+    "Notes must not exceed 1,000 characters."
+  ],
+  "У группы уже есть занятие": [
+    "Guruhda bu vaqtda boshqa dars bor",
+    "The group already has a lesson"
+  ],
+  "Аудитория уже занята": ["Xona allaqachon band", "The room is already occupied"],
+  "Преподаватель уже занят": ["O‘qituvchi bu vaqtda band", "The teacher is already busy"],
+  "Ошибка в расписании": ["Jadvalda xato", "Schedule error"],
+  "Не удалось прочитать JSON. Выберите резервную копию Tempo.": [
+    "JSON o‘qilmadi. Tempo zaxira nusxasini tanlang.",
+    "Could not read JSON. Choose a Tempo backup."
+  ],
+  "Структура файла не поддерживается. Используйте резервную копию Tempo.": [
+    "Fayl tuzilishi qo‘llab-quvvatlanmaydi. Tempo zaxira nusxasidan foydalaning.",
+    "Unsupported file structure. Use a Tempo backup."
+  ],
+  "Сохранённые данные недоступны. Открыта демоверсия; исходная копия не перезаписана. Можно импортировать резервную копию в настройках.": [
+    "Saqlangan ma’lumotlar ochilmadi. Boshlang‘ich jadval ko‘rsatildi; asl nusxa o‘zgarmadi. Sozlamalardan zaxira nusxasini import qilishingiz mumkin.",
+    "Saved data is unavailable. The starter schedule is shown; the original copy has not been overwritten. Import a backup in Settings."
+  ],
+  "Язык интерфейса": ["Interfeys tili", "Interface language"],
+  "Источник UrDU": ["UrDU manbasi", "UrDU source"],
+  "Пример расписания: время, группы и аудитории необходимо уточнить.": [
+    "Namunaviy jadval: vaqt, guruhlar va xonalarni aniqlashtiring.",
+    "Example schedule: confirm times, groups and rooms."
+  ],
+  "Проект по предмету Loyihalarni boshqarish": [
+    "Loyihalarni boshqarish fani bo‘yicha loyiha",
+    "A project for Loyihalarni boshqarish"
+  ],
+  "Ответственный преподаватель": ["Dars o‘qituvchisi", "Lesson teacher"],
+  "По умолчанию для предмета": ["Fan bo‘yicha asosiy o‘qituvchi", "Subject’s default teacher"],
+  "· время местное": [" · mahalliy vaqt", " · local time"]
+}

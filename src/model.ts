@@ -1,3 +1,5 @@
+import { translate, type Language } from './i18n-core';
+
 export type Tone = 'sage' | 'lavender' | 'peach' | 'blue' | 'yellow' | 'rose';
 export type Frequency = 'every' | 'odd' | 'even';
 export type LessonType = 'Лекция' | 'Практика' | 'Семинар' | 'Лабораторная';
@@ -5,12 +7,15 @@ export interface Teacher {
   id: string;
   name: string;
   department: string;
+  short?: string;
+  source?: string;
 }
 export interface Subject {
   id: string;
   name: string;
   code: string;
   teacherId: string;
+  additionalTeacherIds?: string[];
   color: Tone;
 }
 export interface Group {
@@ -21,6 +26,7 @@ export interface Group {
 export interface Lesson {
   id: string;
   subjectId: string;
+  teacherId?: string;
   groupId: string;
   day: number;
   start: string;
@@ -81,9 +87,24 @@ export const initials = (name: string) =>
     .map((n) => n[0])
     .join('');
 export const shortName = (name: string) => {
+  if (/\b[A-Z]{1,2}\./.test(name)) return name;
   const [last, ...rest] = name.split(' ');
-  return `${last} ${rest.map((n) => `${n[0]}.`).join(' ')}`;
+  return `${last} ${rest
+    .filter((n) => !/^(o['‘’]g['‘’]li|qizi)$/i.test(n))
+    .map((n) => `${n.startsWith('Sh') ? 'Sh' : n[0]}.`)
+    .join(' ')}`;
 };
+export const subjectTeachers = (subject: Subject, data: Data) =>
+  [subject.teacherId, ...(subject.additionalTeacherIds ?? [])]
+    .map((id) => data.teachers.find((teacher) => teacher.id === id))
+    .filter((teacher): teacher is Teacher => Boolean(teacher));
+export const lessonTeacher = (lesson: Lesson, data: Data) =>
+  data.teachers.find(
+    (teacher) =>
+      teacher.id ===
+      (lesson.teacherId ??
+        data.subjects.find((subject) => subject.id === lesson.subjectId)?.teacherId),
+  );
 export function plural(n: number, words: [string, string, string]): string {
   const a = n % 100;
   const b = n % 10;
@@ -91,30 +112,102 @@ export function plural(n: number, words: [string, string, string]): string {
 }
 
 export function createDemo(): Data {
+  const cs = "Kompyuter ilmlari va sun'iy intellekt texnologiyalari";
+  const csSource = 'https://urdu.uz/uz/site/departmentviewemployee?id=26';
+  const ceSource = 'https://urdu.uz/uz/site/departmentviewemployee?id=113';
   const teachers: Teacher[] = [
-    { id: 't1', name: 'Каримова Алина Рустамовна', department: 'Математика и анализ' },
-    { id: 't2', name: 'Петров Максим Андреевич', department: 'Компьютерные науки' },
-    { id: 't3', name: 'Юсупова Диана Алишеровна', department: 'Иностранные языки' },
-    { id: 't4', name: 'Соколов Артём Ильич', department: 'Информационные системы' },
-    { id: 't5', name: 'Мирзаев Тимур Олегович', department: 'Гуманитарные дисциплины' },
+    {
+      id: 't1',
+      name: 'Xusainov Shixnazar Madaminovich',
+      short: 'Xusainov Sh. M.',
+      department: cs,
+      source: csSource,
+    },
+    {
+      id: 't6',
+      name: "Yuldashov Ollabergan Ergash o'g'li",
+      short: 'Yuldashov O. E.',
+      department: cs,
+      source: csSource,
+    },
+    {
+      id: 't2',
+      name: 'Shermatov B. I.',
+      short: 'Shermatov B. I.',
+      department: cs,
+      source: 'https://urdu.uz/uz/site/view-fan?id=4',
+    },
+    {
+      id: 't3',
+      name: 'Sattarova Sapura Beknazarovna',
+      short: 'Sattarova S. B.',
+      department: cs,
+      source: csSource,
+    },
+    {
+      id: 't4',
+      name: "Quriyozov Elmurod Rajabboy o'g'li",
+      short: 'Quriyozov E. R.',
+      department: cs,
+      source: csSource,
+    },
+    { id: 't5', name: 'Ruzmetov O. A.', department: 'Tadbirkorlik asoslari' },
+    {
+      id: 't7',
+      name: "Xo'jayev Otabek Kadambayevich",
+      department: 'Kompyuter injiniringi',
+      source: ceSource,
+    },
+    {
+      id: 't8',
+      name: 'Yusupova Shohida Botirboyevna',
+      department: 'Kompyuter injiniringi',
+      source: ceSource,
+    },
   ];
   const subjects: Subject[] = [
-    { id: 's1', name: 'Высшая математика', code: 'MATH 201', teacherId: 't1', color: 'sage' },
+    {
+      id: 's1',
+      name: 'Loyihalarni boshqarish',
+      code: 'LB',
+      teacherId: 't1',
+      additionalTeacherIds: ['t6'],
+      color: 'sage',
+    },
     {
       id: 's2',
-      name: 'Алгоритмы и структуры данных',
-      code: 'CS 204',
+      name: 'Data mining va berilganlar tahlili',
+      code: 'DM',
       teacherId: 't2',
       color: 'lavender',
     },
-    { id: 's3', name: 'Английский язык', code: 'ENG 202', teacherId: 't3', color: 'peach' },
-    { id: 's4', name: 'Базы данных', code: 'CS 208', teacherId: 't4', color: 'blue' },
-    { id: 's5', name: 'Философия', code: 'HUM 201', teacherId: 't5', color: 'yellow' },
-    { id: 's6', name: 'Веб-разработка', code: 'CS 212', teacherId: 't2', color: 'rose' },
+    {
+      id: 's3',
+      name: "Informatikani o'qitish metodikasi",
+      code: 'IOM',
+      teacherId: 't3',
+      color: 'peach',
+    },
+    {
+      id: 's4',
+      name: "Sun'iy intellekt texnologiyalari",
+      code: 'SI',
+      teacherId: 't4',
+      color: 'blue',
+    },
+    { id: 's5', name: 'Tadbirkorlik asoslari', code: 'TA', teacherId: 't5', color: 'yellow' },
+    {
+      id: 's6',
+      name: 'Java dasturlash tili asoslari',
+      code: 'JAVA',
+      teacherId: 't2',
+      additionalTeacherIds: ['t4'],
+      color: 'rose',
+    },
   ];
   const groups = [
-    { id: 'g1', name: 'ИС-21', description: 'Информационные системы · 2 курс' },
-    { id: 'g2', name: 'ПИ-22', description: 'Программная инженерия · 2 курс' },
+    { id: 'g1', name: 'KI-21', description: 'Kompyuter injiniringi · namunaviy guruh' },
+    { id: 'g2', name: 'KI-22', description: 'Kompyuter injiniringi · namunaviy guruh' },
   ];
   const slots: [string, number, string, string, string, LessonType][] = [
     ['s1', 0, '09:00', '10:20', '301', 'Лекция'],
@@ -136,6 +229,7 @@ export function createDemo(): Data {
   const lessons: Lesson[] = slots.map(([subjectId, day, start, end, room, type], i) => ({
     id: `l${i}`,
     subjectId,
+    ...(subjectId === 's1' && type !== 'Лекция' ? { teacherId: 't6' } : {}),
     groupId: 'g1',
     day,
     start,
@@ -243,7 +337,9 @@ export function validateLesson(lesson: Lesson, data: Data): string | null {
     return 'Проверьте формат и периодичность занятия.';
   if (typeof lesson.note !== 'string' || lesson.note.length > 1000)
     return 'Заметка должна быть не длиннее 1000 символов.';
-  const teacherId = data.subjects.find((s) => s.id === lesson.subjectId)?.teacherId;
+  if (lesson.teacherId && !data.teachers.some((teacher) => teacher.id === lesson.teacherId))
+    return 'Выберите преподавателя из справочника.';
+  const teacherId = lessonTeacher(lesson, data)?.id;
   const collision = data.lessons.find(
     (other) =>
       other.id !== lesson.id &&
@@ -255,7 +351,7 @@ export function validateLesson(lesson: Lesson, data: Data): string | null {
       minutes(lesson.end) > minutes(other.start) &&
       (other.groupId === lesson.groupId ||
         other.room.trim().toLocaleLowerCase() === lesson.room.trim().toLocaleLowerCase() ||
-        data.subjects.find((s) => s.id === other.subjectId)?.teacherId === teacherId),
+        (teacherId && lessonTeacher(other, data)?.id === teacherId)),
   );
   if (!collision) return null;
   const subject = data.subjects.find((s) => s.id === collision.subjectId);
@@ -297,7 +393,17 @@ export function parseData(raw: string): Data {
       return fail();
   }
   if (!data.groups.length || !data.subjects.length || !data.teachers.length) return fail();
-  if (data.teachers.some((t) => !string(t.name, 100) || !string(t.department, 120))) return fail();
+  if (
+    data.teachers.some(
+      (t) =>
+        !string(t.name, 100) ||
+        !string(t.department, 120) ||
+        (t.short !== undefined && !string(t.short, 60)) ||
+        (t.source !== undefined &&
+          (typeof t.source !== 'string' || !/^https:\/\/(www\.)?urdu\.uz\//.test(t.source))),
+    )
+  )
+    return fail();
   if (data.groups.some((g) => !string(g.name, 60) || !string(g.description, 150))) return fail();
   if (
     data.subjects.some(
@@ -305,21 +411,99 @@ export function parseData(raw: string): Data {
         !string(s.name, 100) ||
         !string(s.code, 30) ||
         !TONES.includes(s.color) ||
-        !data.teachers.some((t) => t.id === s.teacherId),
+        (s.teacherId !== '' && !data.teachers.some((t) => t.id === s.teacherId)) ||
+        (s.additionalTeacherIds !== undefined &&
+          (!Array.isArray(s.additionalTeacherIds) ||
+            s.additionalTeacherIds.some((id) => !data.teachers.some((t) => t.id === id)))),
     )
   )
     return fail();
   for (const lesson of data.lessons) {
+    if (lesson.teacherId !== undefined && typeof lesson.teacherId !== 'string') return fail();
     const error = validateLesson(lesson, data);
     if (error) throw new Error(`Ошибка в расписании: ${error}`);
   }
   return data;
 }
 
+export function migrateLegacy(data: Data): Data {
+  const previousNames: Record<string, string> = {
+    t1: 'Каримова Алина Рустамовна',
+    t2: 'Петров Максим Андреевич',
+    t3: 'Юсупова Диана Алишеровна',
+    t4: 'Соколов Артём Ильич',
+    t5: 'Мирзаев Тимур Олегович',
+  };
+  if (!data.teachers.some((teacher) => previousNames[teacher.id] === teacher.name)) return data;
+  const next = createDemo();
+  const previousSubjects: Record<string, string> = {
+    s1: 'Высшая математика',
+    s2: 'Алгоритмы и структуры данных',
+    s3: 'Английский язык',
+    s4: 'Базы данных',
+    s5: 'Философия',
+    s6: 'Веб-разработка',
+  };
+  const updatedSubjects = new Set(
+    data.subjects
+      .filter((subject) => previousSubjects[subject.id] === subject.name)
+      .map((subject) => subject.id),
+  );
+  return {
+    ...data,
+    teachers: [
+      ...data.teachers.map((teacher) =>
+        previousNames[teacher.id] === teacher.name
+          ? next.teachers.find((candidate) => candidate.id === teacher.id)!
+          : teacher,
+      ),
+      ...next.teachers.filter(
+        (teacher) => !data.teachers.some((existing) => existing.id === teacher.id),
+      ),
+    ],
+    subjects: data.subjects.map((subject) =>
+      updatedSubjects.has(subject.id)
+        ? next.subjects.find((candidate) => candidate.id === subject.id)!
+        : subject,
+    ),
+    groups: data.groups.map((group) =>
+      (group.id === 'g1' && group.name === 'ИС-21') || (group.id === 'g2' && group.name === 'ПИ-22')
+        ? next.groups.find((candidate) => candidate.id === group.id)!
+        : group,
+    ),
+    lessons: data.lessons.map((lesson) =>
+      updatedSubjects.has('s1') &&
+      lesson.subjectId === 's1' &&
+      lesson.teacherId === undefined &&
+      lesson.type !== 'Лекция'
+        ? { ...lesson, teacherId: 't6' }
+        : lesson,
+    ),
+  };
+}
+
 export function loadData(): { data: Data; warning: string } {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return { data: raw ? parseData(raw) : createDemo(), warning: '' };
+    if (!raw) return { data: createDemo(), warning: '' };
+    const previous = parseData(raw);
+    const data = migrateLegacy(previous);
+    if (data !== previous) {
+      try {
+        // Retain the original before updating only the recognized starter records.
+        const backupKey = `${STORAGE_KEY}-before-urdu`;
+        if (!localStorage.getItem(backupKey)) localStorage.setItem(backupKey, raw);
+        parseData(JSON.stringify(data));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch {
+        return {
+          data,
+          warning:
+            'Не удалось сохранить изменения в браузере. Скачайте резервную копию в настройках, чтобы не потерять данные.',
+        };
+      }
+    }
+    return { data, warning: '' };
   } catch {
     return {
       data: createDemo(),
@@ -329,7 +513,13 @@ export function loadData(): { data: Data; warning: string } {
   }
 }
 
-export function calendarExport(lessons: Lesson[], data: Data, week: Date): string {
+export function calendarExport(
+  lessons: Lesson[],
+  data: Data,
+  week: Date,
+  language: Language = 'uz',
+): string {
+  const t = (key: string) => translate(language, key);
   const escape = (s: string) =>
     s.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
   const stamp = (date: Date, time: string) =>
@@ -337,14 +527,14 @@ export function calendarExport(lessons: Lesson[], data: Data, week: Date): strin
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Tempo//Campus//RU',
+    `PRODID:-//Tempo//Campus//${language.toUpperCase()}`,
     'CALSCALE:GREGORIAN',
     'X-WR-CALNAME:Tempo',
   ];
   for (const lesson of lessons.filter((l) => activeInWeek(l, week))) {
     const day = addDays(week, lesson.day);
     const subject = data.subjects.find((s) => s.id === lesson.subjectId)!;
-    const teacher = data.teachers.find((t) => t.id === subject.teacherId)!;
+    const teacher = lessonTeacher(lesson, data);
     lines.push(
       'BEGIN:VEVENT',
       `UID:${lesson.id}-${stamp(day, lesson.start)}@tempo`,
@@ -355,8 +545,8 @@ export function calendarExport(lessons: Lesson[], data: Data, week: Date): strin
       `DTSTART:${stamp(day, lesson.start)}`,
       `DTEND:${stamp(day, lesson.end)}`,
       `SUMMARY:${escape(subject.name)}`,
-      `LOCATION:${escape(`Аудитория ${lesson.room}`)}`,
-      `DESCRIPTION:${escape(`${lesson.type} · ${teacher.name}\n${lesson.note}`)}`,
+      `LOCATION:${escape(`${t('Аудитория')} ${lesson.room}`)}`,
+      `DESCRIPTION:${escape(`${t(lesson.type)} · ${teacher?.name ?? t('Преподаватель не указан')}\n${lesson.note}`)}`,
       'END:VEVENT',
     );
   }

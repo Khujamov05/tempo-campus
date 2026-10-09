@@ -39,7 +39,6 @@ import {
   addDays,
   calendarExport,
   createDemo,
-  dateLabel,
   download,
   initials,
   isoWeek,
@@ -47,8 +46,9 @@ import {
   minutes,
   monday,
   parseData,
-  plural,
   shortName,
+  subjectTeachers,
+  lessonTeacher,
   uid,
   validateLesson,
   type Data,
@@ -59,6 +59,8 @@ import {
   type Teacher,
   type Tone,
 } from './model';
+
+import { useI18n, languageNames, type Language } from './i18n';
 
 type Page = 'schedule' | 'subjects' | 'teachers' | 'settings';
 type ModalState =
@@ -89,6 +91,8 @@ function Modal({
   children: ReactNode;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
+
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current!;
@@ -115,11 +119,16 @@ function Modal({
     >
       <div className="modal-heading">
         <div>
-          <span className="eyebrow">ТВОЁ ПРОСТРАНСТВО</span>
+          <span className="eyebrow">{t('ТВОЁ ПРОСТРАНСТВО')}</span>
           <h2>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
         </div>
-        <button type="button" className="icon-button" aria-label="Закрыть окно" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={t('Закрыть окно')}
+          onClick={onClose}
+        >
           <X size={20} />
         </button>
       </div>
@@ -143,6 +152,9 @@ function LessonForm({
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
+  const translateType = t;
+
   const [draft, setDraft] = useState<Lesson>(
     lesson ?? {
       id: uid(),
@@ -175,14 +187,23 @@ function LessonForm({
   }
   return (
     <Modal
-      title={lesson ? 'Детали занятия' : 'Новое занятие'}
-      subtitle="Немного порядка для продуктивной недели."
+      title={lesson ? t('Детали занятия') : t('Новое занятие')}
+      subtitle={t('Немного порядка для продуктивной недели.')}
       onClose={onClose}
     >
       <form onSubmit={submit} className="form">
         <label>
-          Предмет
-          <select value={draft.subjectId} onChange={(e) => set('subjectId', e.target.value)}>
+          {t('Предмет')}{' '}
+          <select
+            value={draft.subjectId}
+            onChange={(e) =>
+              setDraft((current) => ({
+                ...current,
+                subjectId: e.target.value,
+                teacherId: undefined,
+              }))
+            }
+          >
             {data.subjects.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -192,7 +213,7 @@ function LessonForm({
         </label>
         <div className="form-row">
           <label>
-            Группа
+            {t('Группа')}{' '}
             <select value={draft.groupId} onChange={(e) => set('groupId', e.target.value)}>
               {data.groups.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -202,34 +223,36 @@ function LessonForm({
             </select>
           </label>
           <label>
-            Формат
+            {t('Формат')}{' '}
             <select value={draft.type} onChange={(e) => set('type', e.target.value as LessonType)}>
               {TYPES.map((t) => (
-                <option key={t}>{t}</option>
+                <option key={t} value={t}>
+                  {translateType(t)}
+                </option>
               ))}
             </select>
           </label>
         </div>
         <div className="form-row">
           <label>
-            День недели
+            {t('День недели')}{' '}
             <select value={draft.day} onChange={(e) => set('day', Number(e.target.value))}>
               {DAYS.map((d, i) => (
                 <option key={d} value={i}>
-                  {d}
+                  {t(d)}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Повторение
+            {t('Повторение')}{' '}
             <select
               value={draft.frequency}
               onChange={(e) => set('frequency', e.target.value as Frequency)}
             >
               {Object.entries(FREQUENCIES).map(([key, value]) => (
                 <option key={key} value={key}>
-                  {value}
+                  {t(value)}
                 </option>
               ))}
             </select>
@@ -237,7 +260,7 @@ function LessonForm({
         </div>
         <div className="form-row time-row">
           <label>
-            Начало
+            {t('Начало')}{' '}
             <input
               required
               type="time"
@@ -248,7 +271,7 @@ function LessonForm({
             />
           </label>
           <label>
-            Окончание
+            {t('Окончание')}{' '}
             <input
               required
               type="time"
@@ -259,49 +282,59 @@ function LessonForm({
             />
           </label>
           <label>
-            Аудитория
+            {t('Аудитория')}{' '}
             <input
               required
               maxLength={60}
-              placeholder="Например, 301"
+              placeholder={t('Например, 301')}
               value={draft.room}
               onChange={(e) => set('room', e.target.value)}
             />
           </label>
         </div>
         <label>
-          Заметка <span className="optional">необязательно</span>
+          {t('Заметка')} <span className="optional">{t('необязательно')}</span>
           <textarea
             rows={2}
             maxLength={1000}
-            placeholder="Что подготовить к занятию?"
+            placeholder={t('Что подготовить к занятию?')}
             value={draft.note}
             onChange={(e) => set('note', e.target.value)}
           />
         </label>
+        <label>
+          {t('Ответственный преподаватель')}
+          <select
+            value={draft.teacherId ?? ''}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, teacherId: event.target.value || undefined }))
+            }
+          >
+            <option value="">{t('По умолчанию для предмета')}</option>
+            {data.teachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="form-hint">
           <UsersRound size={16} />
-          <span>
-            {
-              data.teachers.find(
-                (t) => t.id === data.subjects.find((s) => s.id === draft.subjectId)?.teacherId,
-              )?.name
-            }
-          </span>
+          <span>{lessonTeacher(draft, data)?.name ?? t('Преподаватель не указан')}</span>
         </div>
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         {deleting && (
           <div className="delete-confirm">
-            <p>Удалить это занятие из всех недель?</p>
+            <p>{t('Удалить это занятие из всех недель?')}</p>
             <button type="button" className="danger-button" onClick={() => onDelete(draft.id)}>
-              Да, удалить занятие
+              {t('Да, удалить занятие')}{' '}
             </button>
             <button type="button" className="text-button" onClick={() => setDeleting(false)}>
-              Отмена
+              {t('Отмена')}{' '}
             </button>
           </div>
         )}
@@ -310,18 +343,18 @@ function LessonForm({
             <button
               type="button"
               className="icon-button delete-button"
-              aria-label="Удалить занятие"
+              aria-label={t('Удалить занятие')}
               onClick={() => setDeleting(true)}
             >
               <Trash2 size={18} />
             </button>
           )}
           <button type="button" className="button secondary" onClick={onClose}>
-            Отмена
+            {t('Отмена')}{' '}
           </button>
           <button className="button primary" type="submit">
             <Check size={17} />
-            {lesson ? 'Сохранить изменения' : 'Добавить занятие'}
+            {lesson ? t('Сохранить изменения') : t('Добавить занятие')}
           </button>
         </div>
       </form>
@@ -340,6 +373,8 @@ function DirectoryForm({
   onSave: (data: Data) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
+
   const [color, setColor] = useState<Tone>('sage');
   const [error, setError] = useState('');
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -373,35 +408,35 @@ function DirectoryForm({
     <Modal
       title={
         type === 'subject'
-          ? 'Новый предмет'
+          ? t('Новый предмет')
           : type === 'teacher'
-            ? 'Новый преподаватель'
-            : 'Новая группа'
+            ? t('Новый преподаватель')
+            : t('Новая группа')
       }
       onClose={onClose}
     >
       <form className="form" onSubmit={submit}>
         <label>
-          {type === 'teacher' ? 'Фамилия, имя и отчество' : 'Название'}
+          {type === 'teacher' ? t('Фамилия, имя и отчество') : t('Название')}
           <input
             name="name"
             required
             maxLength={type === 'group' ? 60 : 100}
             placeholder={
               type === 'subject'
-                ? 'Например, Дискретная математика'
+                ? t('Например, Дискретная математика')
                 : type === 'teacher'
-                  ? 'Например, Иванов Алексей Сергеевич'
-                  : 'Например, ИС-23'
+                  ? t('Введите полное имя')
+                  : t('Например, KI-23')
             }
           />
         </label>
         <label>
           {type === 'subject'
-            ? 'Код предмета'
+            ? t('Код предмета')
             : type === 'teacher'
-              ? 'Кафедра'
-              : 'Направление и курс'}
+              ? t('Кафедра')
+              : t('Направление и курс')}
           <input
             name="detail"
             required
@@ -410,15 +445,15 @@ function DirectoryForm({
               type === 'subject'
                 ? 'MATH 205'
                 : type === 'teacher'
-                  ? 'Компьютерные науки'
-                  : 'Информационные системы · 2 курс'
+                  ? t('Компьютерные науки')
+                  : t('Информационные системы · 2 курс')
             }
           />
         </label>
         {type === 'subject' && (
           <>
             <label>
-              Преподаватель
+              {t('Преподаватель')}{' '}
               <select name="teacher">
                 {data.teachers.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -428,13 +463,13 @@ function DirectoryForm({
               </select>
             </label>
             <fieldset className="color-field">
-              <legend>Цвет в расписании</legend>
+              <legend>{t('Цвет в расписании')}</legend>
               {TONES.map((tone) => (
                 <button
                   key={tone}
                   type="button"
                   className={`color-option ${tone} ${color === tone ? 'selected' : ''}`}
-                  aria-label={`Цвет ${tone}`}
+                  aria-label={t('Цвет {color}', { color: tone })}
                   aria-pressed={color === tone}
                   onClick={() => setColor(tone)}
                 >
@@ -446,16 +481,16 @@ function DirectoryForm({
         )}
         {error && (
           <p className="form-error" role="alert">
-            {error}
+            {t(error)}
           </p>
         )}
         <div className="modal-actions">
           <button type="button" className="button secondary" onClick={onClose}>
-            Отмена
+            {t('Отмена')}{' '}
           </button>
           <button type="submit" className="button primary">
             <Plus size={17} />
-            Добавить
+            {t('Добавить')}{' '}
           </button>
         </div>
       </form>
@@ -472,22 +507,24 @@ function LessonCard({
 }: {
   lesson: Lesson;
   subject: Subject;
-  teacher: Teacher;
+  teacher?: Teacher;
   onClick: () => void;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <button
       className={`lesson-card ${subject.color} ${compact ? 'compact' : ''} ${compact && minutes(lesson.end) - minutes(lesson.start) < 60 ? 'short-lesson' : ''}`}
       onClick={onClick}
-      aria-label={`${subject.name}, ${DAYS[lesson.day]}, ${lesson.start}–${lesson.end}, аудитория ${lesson.room}`}
+      aria-label={`${subject.name}, ${t(DAYS[lesson.day])}, ${lesson.start}–${lesson.end}, ${t('Аудитория')} ${lesson.room}`}
     >
       <div className="lesson-meta">
         <span>
           {lesson.start} — {lesson.end}
         </span>
-        <span className="lesson-type" title={lesson.type}>
-          {lesson.type === 'Лабораторная' ? 'Лаб.' : lesson.type}
+        <span className="lesson-type" title={t(lesson.type)}>
+          {lesson.type === 'Лабораторная' ? t('Лаб.') : t(lesson.type)}
         </span>
       </div>
       <h3>{subject.name}</h3>
@@ -496,7 +533,9 @@ function LessonCard({
           <MapPin size={12} />
           {lesson.room}
         </span>
-        <span className="teacher-short">{shortName(teacher.name)}</span>
+        <span className="teacher-short">
+          {teacher ? (teacher.short ?? shortName(teacher.name)) : t('Преподаватель не указан')}
+        </span>
       </div>
       {!compact && lesson.note && <div className="lesson-note">{lesson.note}</div>}
     </button>
@@ -504,6 +543,8 @@ function LessonCard({
 }
 
 export default function App() {
+  const { t, language, setLanguage, plural, dateLabel } = useI18n();
+
   const [initial] = useState(loadData);
   const [data, setData] = useState(initial.data);
   const [warning, setWarning] = useState(initial.warning);
@@ -576,10 +617,10 @@ export default function App() {
   const visible = weekLessons
     .filter((l) => {
       const subject = data.subjects.find((s) => s.id === l.subjectId)!;
-      const teacher = data.teachers.find((t) => t.id === subject.teacherId)!;
+      const teacher = lessonTeacher(l, data);
       return (
         (filter === 'all' || l.type === filter) &&
-        `${subject.name} ${subject.code} ${teacher.name} ${l.room}`
+        `${subject.name} ${subject.code} ${teacher?.name ?? ''} ${teacher?.short ?? ''} ${l.room}`
           .toLocaleLowerCase()
           .includes(search)
       );
@@ -603,7 +644,7 @@ export default function App() {
   const calendarHeight = (endHour - startHour) * HOUR_HEIGHT;
   function exportCalendar() {
     download(
-      calendarExport(visible, data, week),
+      calendarExport(visible, data, week, language),
       `tempo-${group.name}-${dateLabel(week, { year: 'numeric', month: '2-digit', day: '2-digit' })}.ics`,
       'text/calendar;charset=utf-8',
     );
@@ -612,7 +653,7 @@ export default function App() {
   async function importFile(file?: File) {
     if (!file) return;
     try {
-      if (file.size > 2_000_000) throw new Error('Файл слишком большой. Максимум — 2 МБ.');
+      if (file.size > 2_000_000) throw new Error(t('Файл слишком большой. Максимум — 2 МБ.'));
       setModal({ type: 'import', data: parseData(await file.text()) });
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Не удалось импортировать файл');
@@ -625,7 +666,7 @@ export default function App() {
       {mobileNav && (
         <button
           className="nav-backdrop"
-          aria-label="Закрыть меню"
+          aria-label={t('Закрыть меню')}
           onClick={() => setMobileNav(false)}
         />
       )}
@@ -650,12 +691,12 @@ export default function App() {
             <GraduationCap size={19} />
           </span>
           <div>
-            <strong>Мой кампус</strong>
-            <span>Учебное пространство</span>
+            <strong>{t('Мой кампус')}</strong>
+            <span>{t('Учебное пространство')}</span>
           </div>
         </div>
-        <div className="nav-caption">ОРГАНИЗУЙ СВОЙ ДЕНЬ</div>
-        <nav aria-label="Основная навигация">
+        <div className="nav-caption">{t('ОРГАНИЗУЙ СВОЙ ДЕНЬ')}</div>
+        <nav aria-label={t('Основная навигация')}>
           {(
             [
               { id: 'schedule', icon: CalendarDays },
@@ -670,7 +711,7 @@ export default function App() {
               aria-current={page === item.id ? 'page' : undefined}
             >
               <item.icon size={19} />
-              <span>{PAGES[item.id]}</span>
+              <span>{t(PAGES[item.id])}</span>
               {item.id === 'subjects' && <span className="nav-count">{data.subjects.length}</span>}
               {item.id === 'schedule' && page === 'schedule' && <span className="nav-dot" />}
             </button>
@@ -685,14 +726,13 @@ export default function App() {
                 <Sparkles size={20} />
               </i>
             </div>
-            <h3>Поймай свой ритм.</h3>
+            <h3>{t('Поймай свой ритм.')}</h3>
             <p>
-              Когда всё на своих местах,
-              <br />
-              остаётся время на главное.
+              {t('Когда всё на своих местах,')} <br />
+              {t('остаётся время на главное.')}{' '}
             </p>
             <button onClick={() => setModal({ type: 'help' })}>
-              Знакомство с Tempo <ArrowUpRight size={14} />
+              {t('Знакомство с Tempo')} <ArrowUpRight size={14} />
             </button>
           </div>
           <button
@@ -700,10 +740,12 @@ export default function App() {
             onClick={() => navigate('settings')}
           >
             <Settings2 size={19} />
-            <span>Настройки</span>
+            <span>{t('Настройки')}</span>
           </button>
           <div className="sidebar-footer">
-            <span className="online-dot" />В твоём ритме<span>v1.0</span>
+            <span className="online-dot" />
+            {t('В твоём ритме')}
+            <span>v1.0</span>
           </div>
         </div>
       </aside>
@@ -713,56 +755,68 @@ export default function App() {
           <div className="breadcrumbs">
             <button
               className="icon-button mobile-menu"
-              aria-label="Открыть меню"
+              aria-label={t('Открыть меню')}
               onClick={() => setMobileNav(true)}
             >
               <Menu size={22} />
             </button>
-            <span>Мой кампус</span>
+            <span>{t('Мой кампус')}</span>
             <ChevronRight size={13} />
-            <strong>{PAGES[page]}</strong>
+            <strong>{t(PAGES[page])}</strong>
           </div>
           <div className="topbar-right">
+            <select
+              className="language-select"
+              aria-label={t('Язык интерфейса')}
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as Language)}
+            >
+              {(Object.keys(languageNames) as Language[]).map((code) => (
+                <option key={code} value={code}>
+                  {languageNames[code]}
+                </option>
+              ))}
+            </select>
             <span className="today-date">
               {dateLabel(clock, { day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
             <span className="top-divider" />
             <button
               className="icon-button help-button"
-              aria-label="Помощь"
+              aria-label={t('Помощь')}
               onClick={() => setModal({ type: 'help' })}
             >
               <CircleHelp size={19} />
             </button>
-            <span className="profile-avatar" title="Личное пространство">
-              Т
+            <span className="profile-avatar" title={t('Личное пространство')}>
+              T
             </span>
           </div>
         </header>
         <main>
           {warning && (
             <div className="warning" role="alert">
-              {warning}
+              {t(warning)}
             </div>
           )}
           <section className="page-heading">
             <div>
               <div className="eyebrow">
                 <span className="tiny-dot" />{' '}
-                {page === 'schedule' ? 'МЕНЬШЕ ХАОСА. БОЛЬШЕ ФОКУСА.' : 'ВСЁ В ОДНОМ МЕСТЕ'}
+                {page === 'schedule' ? t('МЕНЬШЕ ХАОСА. БОЛЬШЕ ФОКУСА.') : t('ВСЁ В ОДНОМ МЕСТЕ')}
               </div>
               <h1>
-                {page === 'schedule' ? 'Твоя неделя в порядке' : PAGES[page]}
+                {page === 'schedule' ? t('Твоя неделя в порядке') : t(PAGES[page])}
                 <span className="heading-dot">.</span>
               </h1>
               <p>
                 {page === 'schedule'
-                  ? 'Учись, планируй и находи время для себя.'
+                  ? t('Учись, планируй и находи время для себя.')
                   : page === 'subjects'
-                    ? 'Все дисциплины и их место в твоём расписании.'
+                    ? t('Все дисциплины и их место в твоём расписании.')
                     : page === 'teachers'
-                      ? 'Те, кто помогает двигаться вперёд.'
-                      : 'Твоё пространство работает по твоим правилам.'}
+                      ? t('Те, кто помогает двигаться вперёд.')
+                      : t('Твоё пространство работает по твоим правилам.')}
               </p>
             </div>
             {page === 'schedule' ? (
@@ -771,7 +825,7 @@ export default function App() {
                 onClick={() => setModal({ type: 'lesson' })}
               >
                 <Plus size={18} />
-                Добавить занятие
+                {t('Добавить занятие')}{' '}
               </button>
             ) : page === 'subjects' || page === 'teachers' ? (
               <button
@@ -779,25 +833,25 @@ export default function App() {
                 onClick={() => setModal({ type: page === 'subjects' ? 'subject' : 'teacher' })}
               >
                 <Plus size={18} />
-                {page === 'subjects' ? 'Добавить предмет' : 'Добавить преподавателя'}
+                {page === 'subjects' ? t('Добавить предмет') : t('Добавить преподавателя')}
               </button>
             ) : (
               <div className="privacy-badge">
                 <span className="online-dot" />
-                Локальное пространство
+                {t('Локальное пространство')}{' '}
               </div>
             )}
           </section>
 
           {page === 'schedule' && (
             <>
-              <section className="stats" aria-label="Обзор недели">
+              <section className="stats" aria-label={t('Обзор недели')}>
                 <div className="stat-card">
                   <span className="stat-icon sage">
                     <CalendarDays size={20} />
                   </span>
                   <div>
-                    <span className="stat-label">На этой неделе</span>
+                    <span className="stat-label">{t('На этой неделе')}</span>
                     <strong>
                       {weekLessons.length}
                       <small>{plural(weekLessons.length, ['занятие', 'занятия', 'занятий'])}</small>
@@ -810,10 +864,10 @@ export default function App() {
                     <Clock3 size={20} />
                   </span>
                   <div>
-                    <span className="stat-label">Время учиться</span>
+                    <span className="stat-label">{t('Время учиться')}</span>
                     <strong>
                       {Math.round((totalMinutes / 60) * 10) / 10}
-                      <small>часов</small>
+                      <small>{t('часов')}</small>
                     </strong>
                   </div>
                 </div>
@@ -822,7 +876,7 @@ export default function App() {
                     <BookOpen size={20} />
                   </span>
                   <div>
-                    <span className="stat-label">В фокусе</span>
+                    <span className="stat-label">{t('В фокусе')}</span>
                     <strong>
                       {subjectCount}
                       <small>{plural(subjectCount, ['предмет', 'предмета', 'предметов'])}</small>
@@ -834,7 +888,7 @@ export default function App() {
                     <Coffee size={20} />
                   </span>
                   <div>
-                    <span className="stat-label">Время для себя</span>
+                    <span className="stat-label">{t('Время для себя')}</span>
                     <strong>
                       {freeDays}
                       <small>
@@ -845,7 +899,7 @@ export default function App() {
                 </div>
               </section>
 
-              <section className="schedule-panel" aria-label="Расписание занятий">
+              <section className="schedule-panel" aria-label={t('Расписание занятий')}>
                 <div className="schedule-toolbar">
                   <div className="week-navigation">
                     <h2>
@@ -861,41 +915,41 @@ export default function App() {
                     <div className="week-arrows">
                       <button
                         className="icon-button"
-                        aria-label="Предыдущая неделя"
+                        aria-label={t('Предыдущая неделя')}
                         onClick={() => setWeek(addDays(week, -7))}
                       >
                         <ChevronLeft size={17} />
                       </button>
                       <button
                         className="icon-button"
-                        aria-label="Следующая неделя"
+                        aria-label={t('Следующая неделя')}
                         onClick={() => setWeek(addDays(week, 7))}
                       >
                         <ChevronRight size={17} />
                       </button>
                     </div>
                     <button className="today-button" onClick={() => setWeek(monday(clock))}>
-                      Сегодня
+                      {t('Сегодня')}{' '}
                     </button>
                   </div>
-                  <div className="view-switch" aria-label="Вид расписания">
+                  <div className="view-switch" aria-label={t('Вид расписания')}>
                     <button
                       className={view === 'week' ? 'selected' : ''}
-                      aria-label="Неделя"
+                      aria-label={t('Неделя')}
                       aria-pressed={view === 'week'}
                       onClick={() => setView('week')}
                     >
                       <LayoutGrid size={15} />
-                      <span>Неделя</span>
+                      <span>{t('Неделя')}</span>
                     </button>
                     <button
                       className={view === 'list' ? 'selected' : ''}
-                      aria-label="Список"
+                      aria-label={t('Список')}
                       aria-pressed={view === 'list'}
                       onClick={() => setView('list')}
                     >
                       <List size={16} />
-                      <span>Список</span>
+                      <span>{t('Список')}</span>
                     </button>
                   </div>
                 </div>
@@ -904,7 +958,7 @@ export default function App() {
                     <label className="group-selector">
                       <UsersRound size={16} />
                       <select
-                        aria-label="Учебная группа"
+                        aria-label={t('Учебная группа')}
                         value={group.id}
                         onChange={(e) => setGroupId(e.target.value)}
                       >
@@ -919,34 +973,36 @@ export default function App() {
                     <span className="filter-divider" />
                     <label className="type-selector">
                       <select
-                        aria-label="Формат занятий"
+                        aria-label={t('Формат занятий')}
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
                       >
-                        <option value="all">Все занятия</option>
+                        <option value="all">{t('Все занятия')}</option>
                         {TYPES.map((type) => (
-                          <option key={type}>{type}</option>
+                          <option key={type} value={type}>
+                            {t(type)}
+                          </option>
                         ))}
                       </select>
                       <ChevronDown size={13} />
                     </label>
                     <span className="week-badge">
-                      {isoWeek(week) % 2 === 0 ? 'Чётная' : 'Нечётная'} неделя
+                      {isoWeek(week) % 2 === 0 ? t('Чётная неделя') : t('Нечётная неделя')}
                     </span>
                   </div>
                   <div className="filter-right">
                     <label className="search-field">
                       <Search size={16} />
                       <input
-                        aria-label="Поиск в расписании"
-                        placeholder="Найти занятие…"
+                        aria-label={t('Поиск в расписании')}
+                        placeholder={t('Найти занятие…')}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                       />
                       {query && (
                         <button
                           className="clear-search"
-                          aria-label="Очистить поиск"
+                          aria-label={t('Очистить поиск')}
                           onClick={() => setQuery('')}
                         >
                           <X size={14} />
@@ -955,8 +1011,8 @@ export default function App() {
                     </label>
                     <button
                       className="icon-button export-button"
-                      aria-label="Скачать календарь ICS"
-                      title="Скачать выбранные занятия в календарь"
+                      aria-label={t('Скачать календарь ICS')}
+                      title={t('Скачать выбранные занятия в календарь')}
                       onClick={exportCalendar}
                     >
                       <ArrowDownToLine size={18} />
@@ -970,12 +1026,14 @@ export default function App() {
                       <Search size={28} />
                     </span>
                     <h3>
-                      {search || filter !== 'all' ? 'Ничего не нашлось' : 'Неделя — чистый лист'}
+                      {search || filter !== 'all'
+                        ? t('Ничего не нашлось')
+                        : t('Неделя — чистый лист')}
                     </h3>
                     <p>
                       {search || filter !== 'all'
-                        ? 'Попробуй другой запрос или убери фильтры.'
-                        : 'Добавь первое занятие и задай свой ритм.'}
+                        ? t('Попробуй другой запрос или убери фильтры.')
+                        : t('Добавь первое занятие и задай свой ритм.')}
                     </p>
                     <button
                       className="button secondary"
@@ -986,22 +1044,22 @@ export default function App() {
                         } else setModal({ type: 'lesson' });
                       }}
                     >
-                      {search || filter !== 'all' ? 'Сбросить фильтры' : 'Добавить занятие'}
+                      {search || filter !== 'all' ? t('Сбросить фильтры') : t('Добавить занятие')}
                     </button>
                   </div>
                 ) : view === 'week' ? (
                   <div className="calendar-scroll">
                     <div className="calendar">
                       <div className="calendar-day-headings">
-                        <div className="timezone-label">ВРЕМЯ</div>
+                        <div className="timezone-label">{t('ВРЕМЯ')}</div>
                         {DAYS.map((day, index) => {
                           const date = addDays(week, index);
                           const isToday = isCurrent && index === dayIndex;
                           return (
                             <div key={day} className={`day-heading ${isToday ? 'is-today' : ''}`}>
                               <span>
-                                {SHORT_DAYS[index]}
-                                <span className="day-full"> · {day}</span>
+                                {t(SHORT_DAYS[index])}
+                                <span className="day-full"> · {t(day)}</span>
                               </span>
                               <strong>{date.getDate()}</strong>
                               {isToday && <i />}
@@ -1039,9 +1097,7 @@ export default function App() {
                                 const subject = data.subjects.find(
                                   (s) => s.id === lesson.subjectId,
                                 )!;
-                                const teacher = data.teachers.find(
-                                  (t) => t.id === subject.teacherId,
-                                )!;
+                                const teacher = lessonTeacher(lesson, data);
                                 return (
                                   <div
                                     className="calendar-event"
@@ -1068,8 +1124,8 @@ export default function App() {
                             {index === 5 && !visible.some((l) => l.day === 5) && (
                               <div className="free-day">
                                 <Coffee size={24} />
-                                <span>Можно выдохнуть</span>
-                                <small>День без занятий</small>
+                                <span>{t('Можно выдохнуть')}</span>
+                                <small>{t('День без занятий')}</small>
                               </div>
                             )}
                             {isCurrent &&
@@ -1098,7 +1154,7 @@ export default function App() {
                           <div className="agenda-date">
                             <strong>{addDays(week, index).getDate()}</strong>
                             <div>
-                              <h3>{day}</h3>
+                              <h3>{t(day)}</h3>
                               <span>
                                 {dayLessons.length}{' '}
                                 {plural(dayLessons.length, ['занятие', 'занятия', 'занятий'])}
@@ -1113,7 +1169,7 @@ export default function App() {
                                   key={lesson.id}
                                   lesson={lesson}
                                   subject={subject}
-                                  teacher={data.teachers.find((t) => t.id === subject.teacherId)!}
+                                  teacher={lessonTeacher(lesson, data)}
                                   onClick={() => setModal({ type: 'lesson', lesson })}
                                 />
                               );
@@ -1128,19 +1184,20 @@ export default function App() {
                   <div className="legend">
                     <span>
                       <i className="sage" />
-                      Точные науки
+                      {t('Точные науки')}{' '}
                     </span>
                     <span>
                       <i className="lavender" />
-                      Технологии
+                      {t('Технологии')}{' '}
                     </span>
                     <span>
-                      <i className="peach" />И не только
+                      <i className="peach" />
+                      {t('И не только')}{' '}
                     </span>
                   </div>
                   <span>
-                    {visible.length} {plural(visible.length, ['занятие', 'занятия', 'занятий'])} ·
-                    время местное
+                    {visible.length} {plural(visible.length, ['занятие', 'занятия', 'занятий'])}
+                    {t('· время местное')}{' '}
                   </span>
                 </footer>
               </section>
@@ -1148,13 +1205,13 @@ export default function App() {
                 <span>
                   <Sparkles size={16} />
                   {nextLesson
-                    ? `${minutes(nextLesson.start) <= timeNow ? 'Сейчас' : 'Далее'}: ${data.subjects.find((s) => s.id === nextLesson.subjectId)?.name} · ${nextLesson.start} · ауд. ${nextLesson.room}`
+                    ? `${minutes(nextLesson.start) <= timeNow ? t('Сейчас') : t('Далее')}: ${data.subjects.find((s) => s.id === nextLesson.subjectId)?.name} · ${nextLesson.start} · ${t('ауд.')} ${nextLesson.room}`
                     : isCurrent
-                      ? 'Всё под контролем. Хорошее время для своих планов.'
-                      : 'Новая неделя — новые возможности.'}
+                      ? t('Всё под контролем. Хорошее время для своих планов.')
+                      : t('Новая неделя — новые возможности.')}
                 </span>
                 <button onClick={() => setModal({ type: 'help' })}>
-                  Как это работает <ArrowRight size={14} />
+                  {t('Как это работает')} <ArrowRight size={14} />
                 </button>
               </section>
             </>
@@ -1165,14 +1222,16 @@ export default function App() {
               <div className="directory-toolbar">
                 <span>
                   {page === 'subjects'
-                    ? `${data.subjects.length} дисциплин в пространстве`
-                    : `${data.teachers.length} преподавателей в пространстве`}
+                    ? t('{count} дисциплин в пространстве', { count: data.subjects.length })
+                    : t('{count} преподавателей в пространстве', { count: data.teachers.length })}
                 </span>
                 <label className="search-field">
                   <Search size={16} />
                   <input
-                    aria-label="Поиск по справочнику"
-                    placeholder={page === 'subjects' ? 'Найти предмет…' : 'Найти преподавателя…'}
+                    aria-label={t('Поиск по справочнику')}
+                    placeholder={
+                      page === 'subjects' ? t('Найти предмет…') : t('Найти преподавателя…')
+                    }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />
@@ -1183,7 +1242,7 @@ export default function App() {
                   ? data.subjects
                       .filter((s) => `${s.name} ${s.code}`.toLowerCase().includes(search))
                       .map((subject) => {
-                        const teacher = data.teachers.find((t) => t.id === subject.teacherId)!;
+                        const teachers = subjectTeachers(subject, data);
                         const count = data.lessons.filter(
                           (l) =>
                             l.subjectId === subject.id &&
@@ -1203,15 +1262,21 @@ export default function App() {
                               <h2>{subject.name}</h2>
                               <p>
                                 <UsersRound size={15} />
-                                {shortName(teacher.name)}
+                                {teachers.length
+                                  ? teachers
+                                      .map((teacher) => teacher.short ?? shortName(teacher.name))
+                                      .join(' · ')
+                                  : t('Преподаватель не указан')}
                               </p>
                               <div className="subject-card-footer">
                                 <span>
-                                  {count} в неделю · {group.name}
+                                  {count} {t('в неделю ·')} {group.name}
                                 </span>
                                 <button
                                   className="icon-button"
-                                  aria-label={`Показать занятия: ${subject.name}`}
+                                  aria-label={t('Показать занятия: {subject}', {
+                                    subject: subject.name,
+                                  })}
                                   onClick={() => {
                                     setPage('schedule');
                                     setQuery(subject.name);
@@ -1234,9 +1299,21 @@ export default function App() {
                           </span>
                           <h2>{teacher.name}</h2>
                           <p>{teacher.department}</p>
+                          {teacher.source && (
+                            <a
+                              className="source-link"
+                              href={teacher.source}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {t('Источник UrDU')} <ArrowUpRight size={12} />
+                            </a>
+                          )}
                           <div className="teacher-subjects">
                             {data.subjects
-                              .filter((s) => s.teacherId === teacher.id)
+                              .filter((s) =>
+                                subjectTeachers(s, data).some((t) => t.id === teacher.id),
+                              )
                               .map((s) => (
                                 <span key={s.id} className={s.color}>
                                   {s.name}
@@ -1251,7 +1328,7 @@ export default function App() {
                               setFilter('all');
                             }}
                           >
-                            Занятия · {group.name}
+                            {t('Занятия ·')} {group.name}
                             <ArrowUpRight size={16} />
                           </button>
                         </article>
@@ -1265,8 +1342,8 @@ export default function App() {
               ).length === 0 && (
                 <div className="empty-state">
                   <Search size={28} />
-                  <h3>Ничего не нашлось</h3>
-                  <p>Попробуй изменить поисковый запрос.</p>
+                  <h3>{t('Ничего не нашлось')}</h3>
+                  <p>{t('Попробуй изменить поисковый запрос.')}</p>
                 </div>
               )}
             </>
@@ -1278,8 +1355,8 @@ export default function App() {
                 <span className="stat-icon sage">
                   <UsersRound size={22} />
                 </span>
-                <h2>Учебные группы</h2>
-                <p>Разные направления — одно удобное пространство.</p>
+                <h2>{t('Учебные группы')}</h2>
+                <p>{t('Разные направления — одно удобное пространство.')}</p>
                 <div className="group-list">
                   {data.groups.map((g) => (
                     <div key={g.id}>
@@ -1293,17 +1370,18 @@ export default function App() {
                 </div>
                 <button className="button secondary" onClick={() => setModal({ type: 'group' })}>
                   <Plus size={16} />
-                  Добавить группу
+                  {t('Добавить группу')}{' '}
                 </button>
               </section>
               <section className="settings-card">
                 <span className="stat-icon lavender">
                   <Download size={22} />
                 </span>
-                <h2>Твои данные — с тобой</h2>
+                <h2>{t('Твои данные — с тобой')}</h2>
                 <p>
-                  Расписание сохраняется в этом браузере. Скачай копию, чтобы перенести его на
-                  другое устройство или сохранить перед очисткой браузера.
+                  {t(
+                    'Расписание сохраняется в этом браузере. Скачай копию, чтобы перенести его на другое устройство или сохранить перед очисткой браузера.',
+                  )}{' '}
                 </p>
                 <div className="settings-actions">
                   <button
@@ -1318,11 +1396,11 @@ export default function App() {
                     }}
                   >
                     <Download size={16} />
-                    Скачать копию JSON
+                    {t('Скачать копию JSON')}{' '}
                   </button>
                   <button className="button secondary" onClick={() => fileInput.current?.click()}>
                     <Upload size={16} />
-                    Импортировать копию
+                    {t('Импортировать копию')}{' '}
                   </button>
                   <input
                     ref={fileInput}
@@ -1334,32 +1412,38 @@ export default function App() {
                 </div>
                 <div className="settings-fact">
                   <Check size={16} />
-                  Без регистрации и внешних сервисов
+                  {t('Без регистрации и внешних сервисов')}{' '}
                 </div>
               </section>
               <section className="settings-card full-width">
                 <div>
-                  <h2>Начать с примера</h2>
+                  <h2>{t('Начать с примера')}</h2>
                   <p>
-                    Восстановить демонстрационные предметы, группы и занятия. Текущие данные будут
-                    заменены.
+                    {t(
+                      'Восстановить демонстрационные предметы, группы и занятия. Текущие данные будут заменены.',
+                    )}{' '}
                   </p>
                 </div>
                 <button className="button secondary" onClick={() => setModal({ type: 'reset' })}>
-                  Восстановить демоданные
+                  {t('Восстановить демоданные')}{' '}
                 </button>
               </section>
               <p className="settings-footnote">
-                Tempo 1.0 · Персональный планировщик. Данные не синхронизируются между браузерами и
-                устройствами. Демоданные вымышлены.
+                {t('Личный планировщик. Данные не синхронизируются между устройствами.')}{' '}
               </p>
             </div>
           )}
+          <div className="academic-note">
+            <span>
+              {t('Проект по предмету Loyihalarni boshqarish')} · Xusainov Sh. M. / Yuldashov O. E.
+            </span>
+            <span>{t('Пример расписания: время, группы и аудитории необходимо уточнить.')}</span>
+          </div>
           <footer className="page-footer">
             <span>
-              tempo. <span>С заботой о твоём времени</span>
+              tempo. <span>{t('С заботой о твоём времени')}</span>
             </span>
-            <span>Больше, чем просто планы.</span>
+            <span>{t('Больше, чем просто планы.')}</span>
           </footer>
         </main>
       </div>
@@ -1388,53 +1472,64 @@ export default function App() {
       )}
       {modal?.type === 'help' && (
         <Modal
-          title="Привет, это Tempo."
-          subtitle="Маленькое пространство для больших планов."
+          title={t('Привет, это Tempo.')}
+          subtitle={t('Маленькое пространство для больших планов.')}
           onClose={() => setModal(null)}
         >
           <div className="help-content">
             <p>
               <CalendarDays size={21} />
               <span>
-                <strong>Собери свою неделю</strong>Выбери группу и добавь занятия. Расписание
-                повторяется каждую неделю или по её чётности (ISO).
+                <strong>{t('Собери свою неделю')}</strong>
+                {t(
+                  'Выбери группу и добавь занятия. Расписание повторяется каждую неделю или по её чётности (ISO).',
+                )}{' '}
               </span>
             </p>
             <p>
               <BookOpen size={21} />
               <span>
-                <strong>Всё можно поправить</strong>Нажми на занятие, чтобы изменить время,
-                аудиторию или оставить заметку. Пересечения проверяются автоматически.
+                <strong>{t('Всё можно поправить')}</strong>
+                {t(
+                  'Нажми на занятие, чтобы изменить время, аудиторию или оставить заметку. Пересечения проверяются автоматически.',
+                )}{' '}
               </span>
             </p>
             <p>
               <Download size={21} />
               <span>
-                <strong>Возьми планы с собой</strong>Стрелка рядом с поиском скачивает видимые
-                занятия выбранной недели в формате ICS для Apple, Google и других календарей.
+                <strong>{t('Возьми планы с собой')}</strong>
+                {t(
+                  'Стрелка рядом с поиском скачивает видимые занятия выбранной недели в формате ICS для Apple, Google и других календарей.',
+                )}{' '}
               </span>
             </p>
             <p>
               <Settings2 size={21} />
               <span>
-                <strong>Только в этом браузере</strong>Это личное пространство без сервера и входа.
-                Делай резервные копии в настройках; синхронизации между устройствами нет.
+                <strong>{t('Только в этом браузере')}</strong>
+                {t(
+                  'Это личное пространство без сервера и входа. Делай резервные копии в настройках; синхронизации между устройствами нет.',
+                )}{' '}
               </span>
             </p>
           </div>
           <button className="button primary full-button" onClick={() => setModal(null)}>
-            Поймать свой ритм <ArrowRight size={17} />
+            {t('Поймать свой ритм')} <ArrowRight size={17} />
           </button>
         </Modal>
       )}
       {(modal?.type === 'reset' || modal?.type === 'import') && (
         <Modal
-          title={modal.type === 'reset' ? 'Восстановить демоданные?' : 'Заменить данные из копии?'}
+          title={
+            modal.type === 'reset' ? t('Восстановить демоданные?') : t('Заменить данные из копии?')
+          }
           onClose={() => setModal(null)}
         >
           <p className="confirm-text">
-            Текущее расписание, предметы, преподаватели и группы будут заменены. Сначала можно
-            скачать резервную копию.
+            {t(
+              'Текущее расписание, предметы, преподаватели и группы будут заменены. Сначала можно скачать резервную копию.',
+            )}{' '}
           </p>
           <button
             className="text-button backup-link"
@@ -1443,11 +1538,11 @@ export default function App() {
             }
           >
             <Download size={15} />
-            Скачать текущую копию
+            {t('Скачать текущую копию')}{' '}
           </button>
           <div className="modal-actions">
             <button className="button secondary" onClick={() => setModal(null)}>
-              Отмена
+              {t('Отмена')}{' '}
             </button>
             <button
               className="button primary"
@@ -1459,7 +1554,7 @@ export default function App() {
                 notify('Данные обновлены');
               }}
             >
-              Заменить данные
+              {t('Заменить данные')}{' '}
             </button>
           </div>
         </Modal>
@@ -1469,7 +1564,7 @@ export default function App() {
           <span className="toast-check">
             <Check size={16} />
           </span>
-          <span>{toast}</span>
+          <span>{t(toast)}</span>
           {undo && (
             <button
               onClick={() => {
@@ -1483,12 +1578,12 @@ export default function App() {
               }}
             >
               <ArrowLeft size={14} />
-              Вернуть
+              {t('Вернуть')}{' '}
             </button>
           )}
           <button
             className="toast-close"
-            aria-label="Закрыть уведомление"
+            aria-label={t('Закрыть уведомление')}
             onClick={() => {
               setToast('');
               setUndo(null);
