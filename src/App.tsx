@@ -575,6 +575,35 @@ function PeriodLabel({ period }: { period: ReturnType<typeof schedulePeriods>[nu
   );
 }
 
+function SubjectPicker({
+  subjects,
+  value,
+  onChange,
+}: {
+  subjects: Subject[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <label className="subject-selector">
+      <BookOpen size={16} aria-hidden="true" />
+      <select
+        aria-label={t('Выбор предмета')}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="all">{t('Все предметы')}</option>
+        {subjects.map((subject) => (
+          <option key={subject.id} value={subject.id}>
+            {subject.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export default function App() {
   const { t, language, setLanguage, plural, dateLabel } = useI18n();
 
@@ -585,6 +614,8 @@ export default function App() {
   const [week, setWeek] = useState(() => monday(new Date()));
   const [groupId, setGroupId] = useState(data.groups[0].id);
   const [query, setQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [teacherFilter, setTeacherFilter] = useState('');
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState<'week' | 'list'>('week');
   const [modal, setModal] = useState<ModalState>(null);
@@ -623,6 +654,8 @@ export default function App() {
   function navigate(next: Page) {
     setPage(next);
     setQuery('');
+    setSubjectFilter('all');
+    setTeacherFilter('');
     setFilter('all');
     setMobileNav(false);
   }
@@ -647,17 +680,14 @@ export default function App() {
   const group = data.groups.find((g) => g.id === groupId) ?? data.groups[0];
   const weekLessons = data.lessons.filter((l) => l.groupId === group.id && activeInWeek(l, week));
   const search = query.trim().toLocaleLowerCase();
+  const hasScheduleFilters = subjectFilter !== 'all' || teacherFilter !== '' || filter !== 'all';
   const visible = weekLessons
-    .filter((l) => {
-      const subject = data.subjects.find((s) => s.id === l.subjectId)!;
-      const teacher = lessonTeacher(l, data);
-      return (
+    .filter(
+      (l) =>
         (filter === 'all' || l.type === filter) &&
-        `${subject.name} ${subject.code} ${teacher?.name ?? ''} ${teacher?.short ?? ''} ${l.room}`
-          .toLocaleLowerCase()
-          .includes(search)
-      );
-    })
+        (subjectFilter === 'all' || l.subjectId === subjectFilter) &&
+        (!teacherFilter || lessonTeacher(l, data)?.id === teacherFilter),
+    )
     .sort((a, b) => a.day - b.day || minutes(a.start) - minutes(b.start));
   const totalMinutes = weekLessons.reduce((sum, l) => sum + minutes(l.end) - minutes(l.start), 0);
   const subjectCount = new Set(weekLessons.map((l) => l.subjectId)).size;
@@ -1021,24 +1051,11 @@ export default function App() {
                     </span>
                   </div>
                   <div className="filter-right">
-                    <label className="search-field">
-                      <Search size={16} />
-                      <input
-                        aria-label={t('Поиск в расписании')}
-                        placeholder={t('Найти занятие…')}
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                      />
-                      {query && (
-                        <button
-                          className="clear-search"
-                          aria-label={t('Очистить поиск')}
-                          onClick={() => setQuery('')}
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </label>
+                    <SubjectPicker
+                      subjects={data.subjects}
+                      value={subjectFilter}
+                      onChange={setSubjectFilter}
+                    />
                     <button
                       className="icon-button export-button"
                       aria-label={t('Скачать календарь ICS')}
@@ -1050,31 +1067,45 @@ export default function App() {
                   </div>
                 </div>
 
-                {visible.length === 0 && (view === 'list' || search || filter !== 'all') ? (
+                {teacherFilter && (
+                  <div className="active-teacher-filter">
+                    <span>
+                      {t('Преподаватель')}:{' '}
+                      {data.teachers.find((teacher) => teacher.id === teacherFilter)?.name}
+                    </span>
+                    <button
+                      className="icon-button"
+                      aria-label={t('Сбросить фильтр преподавателя')}
+                      onClick={() => setTeacherFilter('')}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+                {visible.length === 0 && (view === 'list' || hasScheduleFilters) ? (
                   <div className="empty-state">
                     <span className="empty-icon">
                       <Search size={28} />
                     </span>
                     <h3>
-                      {search || filter !== 'all'
-                        ? t('Ничего не нашлось')
-                        : t('Неделя — чистый лист')}
+                      {hasScheduleFilters ? t('Ничего не нашлось') : t('Неделя — чистый лист')}
                     </h3>
                     <p>
-                      {search || filter !== 'all'
-                        ? t('Попробуй другой запрос или убери фильтры.')
+                      {hasScheduleFilters
+                        ? t('Выберите другой предмет или сбросьте фильтры.')
                         : t('Добавь первое занятие и задай свой ритм.')}
                     </p>
                     <button
                       className="button secondary"
                       onClick={() => {
-                        if (search || filter !== 'all') {
-                          setQuery('');
+                        if (hasScheduleFilters) {
+                          setSubjectFilter('all');
+                          setTeacherFilter('');
                           setFilter('all');
                         } else setModal({ type: 'lesson' });
                       }}
                     >
-                      {search || filter !== 'all' ? t('Сбросить фильтры') : t('Добавить занятие')}
+                      {hasScheduleFilters ? t('Сбросить фильтры') : t('Добавить занятие')}
                     </button>
                   </div>
                 ) : view === 'week' ? (
@@ -1260,22 +1291,28 @@ export default function App() {
                     ? t('{count} дисциплин в пространстве', { count: data.subjects.length })
                     : t('{count} преподавателей в пространстве', { count: data.teachers.length })}
                 </span>
-                <label className="search-field">
-                  <Search size={16} />
-                  <input
-                    aria-label={t('Поиск по справочнику')}
-                    placeholder={
-                      page === 'subjects' ? t('Найти предмет…') : t('Найти преподавателя…')
-                    }
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                {page === 'subjects' ? (
+                  <SubjectPicker
+                    subjects={data.subjects}
+                    value={subjectFilter}
+                    onChange={setSubjectFilter}
                   />
-                </label>
+                ) : (
+                  <label className="search-field">
+                    <Search size={16} />
+                    <input
+                      aria-label={t('Поиск по справочнику')}
+                      placeholder={t('Найти преподавателя…')}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </label>
+                )}
               </div>
               <div className="directory-grid">
                 {page === 'subjects'
                   ? data.subjects
-                      .filter((s) => `${s.name} ${s.code}`.toLowerCase().includes(search))
+                      .filter((s) => subjectFilter === 'all' || s.id === subjectFilter)
                       .map((subject) => {
                         const teachers = subjectTeachers(subject, data);
                         const count = data.lessons.filter(
@@ -1313,9 +1350,8 @@ export default function App() {
                                     subject: subject.name,
                                   })}
                                   onClick={() => {
-                                    setPage('schedule');
-                                    setQuery(subject.name);
-                                    setFilter('all');
+                                    navigate('schedule');
+                                    setSubjectFilter(subject.id);
                                   }}
                                 >
                                   <ArrowUpRight size={18} />
@@ -1358,9 +1394,8 @@ export default function App() {
                           <button
                             className="button secondary"
                             onClick={() => {
-                              setPage('schedule');
-                              setQuery(teacher.name);
-                              setFilter('all');
+                              navigate('schedule');
+                              setTeacherFilter(teacher.id);
                             }}
                           >
                             {t('Занятия ·')} {group.name}
@@ -1370,7 +1405,7 @@ export default function App() {
                       ))}
               </div>
               {(page === 'subjects'
-                ? data.subjects.filter((s) => `${s.name} ${s.code}`.toLowerCase().includes(search))
+                ? data.subjects.filter((s) => subjectFilter === 'all' || s.id === subjectFilter)
                 : data.teachers.filter((t) =>
                     `${t.name} ${t.department}`.toLowerCase().includes(search),
                   )
@@ -1536,7 +1571,7 @@ export default function App() {
               <span>
                 <strong>{t('Возьми планы с собой')}</strong>
                 {t(
-                  'Стрелка рядом с поиском скачивает видимые занятия выбранной недели в формате ICS для Apple, Google и других календарей.',
+                  'Стрелка рядом с выбором предмета скачивает видимые занятия выбранной недели в формате ICS для Apple, Google и других календарей.',
                 )}{' '}
               </span>
             </p>
