@@ -58,6 +58,19 @@ export const LESSON_PERIODS = [
 ] as const;
 export const isLessonPeriod = (lesson: Pick<Lesson, 'start' | 'end'>) =>
   LESSON_PERIODS.some((period) => period.start === lesson.start && period.end === lesson.end);
+export function schedulePeriods(lessons: Lesson[]) {
+  const rows: { start: string; end: string; number: number | null }[] = LESSON_PERIODS.map(
+    (period, index) => ({ ...period, number: index + 1 }),
+  );
+  for (const lesson of lessons) {
+    if (!rows.some((row) => row.start === lesson.start && row.end === lesson.end)) {
+      rows.push({ start: lesson.start, end: lesson.end, number: null });
+    }
+  }
+  return rows.sort(
+    (a, b) => minutes(a.start) - minutes(b.start) || minutes(a.end) - minutes(b.end),
+  );
+}
 export const FREQUENCIES: Record<Frequency, string> = {
   every: 'Каждую неделю',
   odd: 'Нечётные недели',
@@ -216,8 +229,10 @@ export function createDemo(): Data {
     },
   ];
   const groups = [
-    { id: 'g1', name: 'KI-21', description: 'Kompyuter injiniringi · namunaviy guruh' },
-    { id: 'g2', name: 'KI-22', description: 'Kompyuter injiniringi · namunaviy guruh' },
+    { id: 'g1', name: 'KIDT-231', description: 'Kompyuter injiniringi' },
+    { id: 'g2', name: 'KIDT-232', description: 'Kompyuter injiniringi' },
+    { id: 'g3', name: 'KIDT-233', description: 'Kompyuter injiniringi' },
+    { id: 'g4', name: 'KIDT-234', description: 'Kompyuter injiniringi' },
   ];
   const slots: [string, number, string, string, string, LessonType][] = [
     ['s1', 0, '08:30', '09:50', '301', 'Лекция'],
@@ -492,17 +507,68 @@ export function migrateLegacy(data: Data): Data {
   };
 }
 
+export function migrateSchedule(data: Data): Data {
+  const demo = createDemo();
+  const oldGroups: Record<string, string[]> = { g1: ['KI-21', 'ИС-21'], g2: ['KI-22', 'ПИ-22'] };
+  const groups = data.groups.map((group) =>
+    oldGroups[group.id]?.includes(group.name)
+      ? { ...group, name: demo.groups.find((candidate) => candidate.id === group.id)!.name }
+      : group,
+  );
+  for (const group of demo.groups) {
+    if (!groups.some((existing) => existing.name === group.name)) {
+      groups.push({
+        ...group,
+        id: groups.some((existing) => existing.id === group.id) ? uid() : group.id,
+      });
+    }
+  }
+  const oldTimes: Record<string, string> = {
+    '08:30': '09:00–10:20',
+    '10:00': '10:40–12:00',
+    '13:30': '13:00–14:20',
+    '15:00': '14:40–16:00',
+  };
+  let lessons = data.lessons.map((lesson) => {
+    const original = demo.lessons.find(
+      (candidate) =>
+        candidate.id === lesson.id &&
+        candidate.subjectId === lesson.subjectId &&
+        candidate.groupId === lesson.groupId &&
+        candidate.day === lesson.day,
+    );
+    return original && oldTimes[original.start] === `${lesson.start}–${lesson.end}`
+      ? { ...lesson, start: original.start, end: original.end }
+      : lesson;
+  });
+  // Leave times intact if updating starter records would conflict with a personal lesson.
+  const candidate = { ...data, groups, lessons };
+  if (lessons.some((lesson) => validateLesson(lesson, candidate))) lessons = data.lessons;
+  if (
+    groups.length === data.groups.length &&
+    groups.every((group, i) => group === data.groups[i]) &&
+    lessons.every((lesson, i) => lesson === data.lessons[i])
+  )
+    return data;
+  return { ...data, groups, lessons };
+}
+
 export function loadData(): { data: Data; warning: string } {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { data: createDemo(), warning: '' };
     const previous = parseData(raw);
-    const data = migrateLegacy(previous);
+    const legacy = migrateLegacy(previous);
+    const data = migrateSchedule(legacy);
     if (data !== previous) {
       try {
         // Retain the original before updating only the recognized starter records.
         const backupKey = `${STORAGE_KEY}-before-urdu`;
-        if (!localStorage.getItem(backupKey)) localStorage.setItem(backupKey, raw);
+        if (legacy !== previous && !localStorage.getItem(backupKey))
+          localStorage.setItem(backupKey, raw);
+        if (data !== legacy && !localStorage.getItem(`${STORAGE_KEY}-before-periods`)) {
+          localStorage.setItem(`${STORAGE_KEY}-before-periods`, raw);
+        }
         parseData(JSON.stringify(data));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch {

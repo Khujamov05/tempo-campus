@@ -182,7 +182,7 @@ select {
 }
 .workspace-label strong {
   display: block;
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.1px;
   font-weight: 500;
   color: #e3e9df;
@@ -704,112 +704,144 @@ h1 {
   scrollbar-width: thin;
   scrollbar-color: #d5deca transparent;
 }
-.calendar {
-  min-width: 850px;
+.period-table {
+  width: 100%;
+  min-width: 940px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
 }
-.calendar-day-headings {
-  display: grid;
-  grid-template-columns: 58px repeat(6, minmax(0, 1fr));
-  border-bottom: 1px solid #e8ecdf;
+.period-table th,
+.period-table td {
+  border-bottom: 1px solid #e2e9dc;
+  border-right: 1px solid #e8ecdf;
 }
-.timezone-label {
-  font-size: 7px;
-  letter-spacing: 1px;
-  color: #a3ad96;
-  align-self: center;
-  text-align: center;
+.period-table th:last-child,
+.period-table td:last-child {
+  border-right: 0;
+}
+.period-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.period-table thead th {
+  padding: 0;
+  background: #f8faf5;
+}
+.period-table .period-corner,
+.period-axis {
+  width: 120px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #f4f7ef;
+  box-shadow: 1px 0 0 #dfe7d5;
+}
+.period-table .period-corner {
+  padding: 18px 12px;
+  color: #758765;
+  font-size: 11px;
+  text-align: left;
+  font-weight: 500;
+}
+.period-axis {
+  padding: 18px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+.period-label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.period-label strong {
+  font-size: 13px;
+  font-weight: 650;
+  color: #385a32;
+}
+.period-label > span {
+  color: #7c8d6b;
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .day-heading {
-  position: relative;
-  border-left: 1px solid #edf0e7;
-  text-align: left;
-  padding: 13px 12px 12px;
+  padding: 14px 12px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  flex-direction: column;
+  gap: 9px;
 }
 .day-heading > span {
-  font-size: 9px;
-  color: #929e85;
+  font-size: 11px;
+  color: #7f9070;
+  font-weight: 450;
   white-space: nowrap;
 }
 .day-full {
   display: none;
 }
 .day-heading strong {
-  font-weight: 500;
   font-size: 18px;
-  color: #6c795d;
-  line-height: 1.1;
-  width: 30px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 7px;
+  font-weight: 500;
+  color: #607751;
 }
 .day-heading.is-today {
-  background: #f5f9ef;
+  background: #e8f1df;
 }
 .day-heading.is-today strong {
-  color: white;
-  background: #345c39;
+  color: #345c39;
 }
-.day-heading.is-today > span {
-  color: #557244;
-}
-.day-heading i {
-  position: absolute;
-  bottom: 0;
-  left: 30%;
-  right: 30%;
-  height: 2px;
-  background: #93b576;
-}
-.calendar-body {
-  display: grid;
-  grid-template-columns: 58px repeat(6, minmax(0, 1fr));
-  padding-top: 10px;
-}
-.time-axis {
-  position: relative;
-}
-.time-axis > span {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 9px;
-  color: #a0ab95;
-  transform: translateY(-5px);
-}
-.day-column {
-  position: relative;
-  border-left: 1px solid #ecf0e6;
+.period-cell {
+  padding: 6px;
+  vertical-align: top;
+  height: 150px;
 }
 .today-column {
-  background: #f9fbf6;
+  background: #f6f9f1;
 }
-.hour-cell {
-  position: absolute;
-  border-top: 1px solid #eef1e8;
-  left: 0;
-  right: 0;
+.current-period {
+  box-shadow: inset 0 0 0 2px #8baa73;
 }
-.hour-cell:after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  border-top: 1px dashed #f0f2eb;
+.period-cell .lesson-card {
+  min-height: 136px;
 }
-.calendar-event {
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  z-index: 2;
-  min-height: 30px;
+.period-cell .lesson-card + .lesson-card {
+  margin-top: 6px;
+}
+.period-cell .lesson-card h3 {
+  font-size: 12px;
+}
+.period-cell .lesson-details {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 10px;
+}
+.period-cell .teacher-short {
+  max-width: 100%;
+}
+.empty-period {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 136px;
+  border: 1px dashed #e5ebdf;
+  border-radius: 6px;
+  color: #b2bfa5;
+  background: transparent;
+}
+.empty-period:hover,
+.empty-period:focus-visible {
+  background: #eef5e7;
+  border-color: #98b781;
+  color: #55763f;
+}
+.empty-period-mark {
+  display: block;
+  text-align: center;
+  color: #bac5af;
+  padding-top: 48px;
 }
 .lesson-card {
   display: flex;
@@ -881,44 +913,6 @@ h1 {
   opacity: 0.8;
   margin-top: 9px;
   white-space: pre-line;
-}
-.free-day {
-  position: absolute;
-  top: 155px;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 8px;
-  color: #b0bba3;
-  font-size: 9px;
-}
-.free-day svg {
-  margin-bottom: 3px;
-  stroke-width: 1.3;
-}
-.free-day small {
-  font-size: 8px;
-  color: #c1c9b6;
-}
-.now-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  background: #83a859;
-  height: 1px;
-  z-index: 3;
-  pointer-events: none;
-}
-.now-line i {
-  position: absolute;
-  left: -3px;
-  top: -3px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #83a859;
 }
 .calendar-footer {
   display: flex;
@@ -1056,12 +1050,20 @@ h1 {
   color: #9ba38f;
 }
 .agenda-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.agenda-entry {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+}
+.agenda-entry > .period-label {
+  padding: 14px 0;
 }
 .agenda-lessons .lesson-card {
-  min-height: 130px;
+  min-height: 110px;
 }
 .agenda-lessons .lesson-meta {
   font-size: 9px;
@@ -1483,17 +1485,6 @@ h1 {
   outline: 2px solid #50875b;
   outline-offset: 3px;
 }
-.period-break {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 3px 0;
-  color: #8b7854;
-  font-size: 10px;
-  line-height: 1.6;
-}
 .optional {
   display: none;
 }
@@ -1699,9 +1690,6 @@ h1 {
   .stat-card {
     padding: 23px;
   }
-  .calendar {
-    min-width: 950px;
-  }
 }
 @media (max-width: 1240px) {
   .sidebar {
@@ -1764,9 +1752,6 @@ h1 {
   }
   .agenda-date h3 {
     font-size: 10px;
-  }
-  .agenda-lessons {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .agenda-lessons .lesson-card {
     min-height: 120px;
@@ -1990,9 +1975,6 @@ h1 {
     font-size: 9px;
     padding: 6px;
   }
-  .calendar {
-    min-width: 850px;
-  }
   .filter-toolbar {
     padding: 10px 12px;
     flex-wrap: wrap;
@@ -2129,9 +2111,6 @@ h1 {
   .agenda-date span {
     font-size: 9px;
   }
-  .agenda-lessons {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .teacher-short {
     max-width: 95px;
   }
@@ -2220,9 +2199,6 @@ h1 {
   .teacher-card h2 {
     max-width: 100%;
   }
-  .agenda-lessons {
-    grid-template-columns: 1fr;
-  }
   .agenda-lessons .lesson-card {
     min-height: 110px;
   }
@@ -2277,9 +2253,6 @@ h1 {
   .calendar-scroll {
     overflow: visible;
   }
-  .calendar {
-    min-width: 0;
-  }
   .schedule-panel {
     box-shadow: none;
   }
@@ -2287,30 +2260,12 @@ h1 {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .calendar-body {
-    height: 760px !important;
-  }
   .calendar-footer {
     font-size: 8px;
   }
   body {
     background: white;
   }
-}
-.lesson-card.short-lesson {
-  padding: 5px 9px;
-}
-.short-lesson .lesson-type,
-.short-lesson .lesson-details {
-  display: none;
-}
-.short-lesson h3 {
-  font-size: 9px;
-  line-height: 1.2;
-  margin-top: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .language-select {
   appearance: auto;
@@ -2373,5 +2328,38 @@ h1 {
   }
   .breadcrumbs > svg {
     display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .agenda-entry {
+    grid-template-columns: 98px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .agenda-entry .period-label strong {
+    font-size: 12px;
+  }
+  .agenda-entry .period-label > span {
+    font-size: 10px;
+  }
+}
+@media print {
+  .period-table {
+    min-width: 0;
+  }
+  .period-table .period-corner,
+  .period-axis {
+    width: 95px;
+    position: static;
+  }
+  .period-cell {
+    height: auto;
+  }
+  .period-cell .lesson-card,
+  .empty-period {
+    min-height: 95px;
+  }
+  .period-table tr {
+    break-inside: avoid;
   }
 }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDemo,
   migrateLegacy,
+  migrateSchedule,
   lessonTeacher,
   subjectTeachers,
   validateLesson,
@@ -78,6 +79,80 @@ describe('UrDU data and instructors', () => {
 });
 
 describe('upgrading existing browsers', () => {
+  it('upgrades starter groups, preserves lesson links and keeps custom groups', () => {
+    const data = createDemo();
+    data.groups = data.groups.slice(0, 2);
+    data.groups[0].name = 'KI-21';
+    data.groups[1].name = 'KI-22';
+    data.groups.push({ id: 'g3', name: 'My group', description: 'Personal' });
+    const updated = migrateSchedule(data);
+    expect(updated.groups.map((group) => group.name)).toEqual([
+      'KIDT-231',
+      'KIDT-232',
+      'My group',
+      'KIDT-233',
+      'KIDT-234',
+    ]);
+    expect(new Set(updated.groups.map((group) => group.id)).size).toBe(5);
+    expect(updated.lessons).toEqual(data.lessons);
+    expect(migrateSchedule(updated)).toBe(updated);
+    expect(parseData(JSON.stringify(updated))).toEqual(updated);
+  });
+  it('aligns only recognized starter times and preserves personal records and notes', () => {
+    const data = createDemo();
+    data.lessons[0] = {
+      ...data.lessons[0],
+      start: '09:00',
+      end: '10:20',
+      room: '999',
+      note: 'Keep me',
+    };
+    const personal = { ...data.lessons[0], id: 'personal', day: 5 };
+    data.lessons.push(personal);
+    const updated = migrateSchedule(data);
+    expect(updated.lessons[0]).toMatchObject({
+      start: '08:30',
+      end: '09:50',
+      room: '999',
+      note: 'Keep me',
+    });
+    expect(updated.lessons.at(-1)).toBe(personal);
+    expect(migrateSchedule(updated)).toBe(updated);
+  });
+  it('does not introduce a collision when aligning an older starter time', () => {
+    const data = createDemo();
+    data.lessons = [
+      { ...data.lessons[0], start: '09:00', end: '10:20' },
+      { ...data.lessons[0], id: 'personal', start: '08:00', end: '08:40' },
+    ];
+    expect(parseData(JSON.stringify(data))).toEqual(data);
+    expect(migrateSchedule(data)).toBe(data);
+  });
+  it('backs up original groups and times before updating browser storage', () => {
+    const data = createDemo();
+    data.groups = data.groups.slice(0, 2);
+    data.groups[0].name = 'KI-21';
+    data.lessons[0] = { ...data.lessons[0], start: '09:00', end: '10:20' };
+    // Keep this fixture conflict-free before migration, as in the old starter schedule.
+    data.lessons = [data.lessons[0]];
+    const raw = JSON.stringify(data);
+    const storage = new Map([[STORAGE_KEY, raw]]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+    const result = loadData();
+    expect(result.warning).toBe('');
+    expect(result.data.lessons[0].start).toBe('08:30');
+    expect(result.data.groups.map((group) => group.name)).toEqual([
+      'KIDT-231',
+      'KIDT-232',
+      'KIDT-233',
+      'KIDT-234',
+    ]);
+    expect(storage.get(`${STORAGE_KEY}-before-periods`)).toBe(raw);
+    expect(loadData().data).toEqual(result.data);
+  });
   it('replaces only recognized demo records while preserving personal changes', () => {
     const data = legacy();
     data.lessons[0].note = 'My notes';

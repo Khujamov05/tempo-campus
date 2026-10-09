@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -36,6 +36,7 @@ import {
   FREQUENCIES,
   LESSON_PERIODS,
   isLessonPeriod,
+  schedulePeriods,
   STORAGE_KEY,
   activeInWeek,
   addDays,
@@ -66,7 +67,7 @@ import { useI18n, languageNames, type Language } from './i18n';
 
 type Page = 'schedule' | 'subjects' | 'teachers' | 'settings';
 type ModalState =
-  | { type: 'lesson'; lesson?: Lesson }
+  | { type: 'lesson'; lesson?: Lesson; slot?: Pick<Lesson, 'day' | 'start' | 'end'> }
   | { type: 'subject' }
   | { type: 'teacher' }
   | { type: 'group' }
@@ -80,7 +81,6 @@ const PAGES: Record<Page, string> = {
   teachers: 'Преподаватели',
   settings: 'Настройки',
 };
-const HOUR_HEIGHT = 92;
 
 function Modal({
   title,
@@ -141,6 +141,7 @@ function Modal({
 
 function LessonForm({
   lesson,
+  slot,
   data,
   groupId,
   onSave,
@@ -148,6 +149,7 @@ function LessonForm({
   onClose,
 }: {
   lesson?: Lesson;
+  slot?: Pick<Lesson, 'day' | 'start' | 'end'>;
   data: Data;
   groupId: string;
   onSave: (lesson: Lesson) => void;
@@ -168,6 +170,7 @@ function LessonForm({
       type: 'Лекция',
       frequency: 'every',
       note: '',
+      ...slot,
     },
   );
   const [error, setError] = useState('');
@@ -278,36 +281,26 @@ function LessonForm({
           )}
           <div className="period-grid">
             {LESSON_PERIODS.map((period, index) => (
-              <Fragment key={period.start}>
-                {index === 3 && (
-                  <div className="period-break">
-                    <Coffee size={15} aria-hidden="true" />
-                    {t('Перерыв 12:50–13:30 · 40 минут')}
-                  </div>
-                )}
-                <label className="period-option">
-                  <input
-                    type="radio"
-                    name="lesson-period"
-                    value={period.start}
-                    required
-                    checked={draft.start === period.start && draft.end === period.end}
-                    onChange={() => {
-                      setDraft((current) => ({ ...current, ...period }));
-                      setError('');
-                    }}
-                  />
-                  <span className="period-card">
-                    <span className="period-number">
-                      {t('Пара {number}', { number: index + 1 })}
-                    </span>
-                    <strong>
-                      {period.start}–{period.end}
-                    </strong>
-                    <Check className="period-check" size={14} aria-hidden="true" />
-                  </span>
-                </label>
-              </Fragment>
+              <label className="period-option" key={period.start}>
+                <input
+                  type="radio"
+                  name="lesson-period"
+                  value={period.start}
+                  required
+                  checked={draft.start === period.start && draft.end === period.end}
+                  onChange={() => {
+                    setDraft((current) => ({ ...current, ...period }));
+                    setError('');
+                  }}
+                />
+                <span className="period-card">
+                  <span className="period-number">{t('Пара {number}', { number: index + 1 })}</span>
+                  <strong>
+                    {period.start}–{period.end}
+                  </strong>
+                  <Check className="period-check" size={14} aria-hidden="true" />
+                </span>
+              </label>
             ))}
           </div>
         </fieldset>
@@ -456,7 +449,7 @@ function DirectoryForm({
                 ? t('Например, Дискретная математика')
                 : type === 'teacher'
                   ? t('Введите полное имя')
-                  : t('Например, KI-23')
+                  : t('Например, KIDT-235')
             }
           />
         </label>
@@ -544,14 +537,11 @@ function LessonCard({
 
   return (
     <button
-      className={`lesson-card ${subject.color} ${compact ? 'compact' : ''} ${compact && minutes(lesson.end) - minutes(lesson.start) < 60 ? 'short-lesson' : ''}`}
+      className={`lesson-card ${subject.color} ${compact ? 'compact' : ''}`}
       onClick={onClick}
       aria-label={`${subject.name}, ${t(DAYS[lesson.day])}, ${lesson.start}–${lesson.end}, ${t('Аудитория')} ${lesson.room}`}
     >
       <div className="lesson-meta">
-        <span>
-          {lesson.start} — {lesson.end}
-        </span>
         <span className="lesson-type" title={t(lesson.type)}>
           {lesson.type === 'Лабораторная' ? t('Лаб.') : t(lesson.type)}
         </span>
@@ -568,6 +558,20 @@ function LessonCard({
       </div>
       {!compact && lesson.note && <div className="lesson-note">{lesson.note}</div>}
     </button>
+  );
+}
+
+function PeriodLabel({ period }: { period: ReturnType<typeof schedulePeriods>[number] }) {
+  const { t } = useI18n();
+  return (
+    <div className="period-label">
+      <strong>
+        {period.number === null ? t('Другое время') : t('Пара {number}', { number: period.number })}
+      </strong>
+      <span>
+        {period.start}–{period.end}
+      </span>
+    </div>
   );
 }
 
@@ -667,10 +671,7 @@ export default function App() {
         .filter((l) => minutes(l.end) > timeNow)
         .sort((a, b) => minutes(a.start) - minutes(b.start))[0]
     : undefined;
-  const startHour = Math.min(9, ...visible.map((l) => Math.floor(minutes(l.start) / 60)));
-  const endHour = Math.max(17, ...visible.map((l) => Math.ceil(minutes(l.end) / 60)));
-  const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
-  const calendarHeight = (endHour - startHour) * HOUR_HEIGHT;
+  const periods = schedulePeriods(visible);
   function exportCalendar() {
     download(
       calendarExport(visible, data, week, language),
@@ -720,8 +721,8 @@ export default function App() {
             <GraduationCap size={19} />
           </span>
           <div>
-            <strong>{t('Мой кампус')}</strong>
-            <span>{t('Учебное пространство')}</span>
+            <strong>Khujamov E.</strong>
+            <span>{t('Автор проекта')}</span>
           </div>
         </div>
         <div className="nav-caption">{t('ОРГАНИЗУЙ СВОЙ ДЕНЬ')}</div>
@@ -1049,7 +1050,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {visible.length === 0 ? (
+                {visible.length === 0 && (view === 'list' || search || filter !== 'all') ? (
                   <div className="empty-state">
                     <span className="empty-icon">
                       <Search size={28} />
@@ -1077,101 +1078,99 @@ export default function App() {
                     </button>
                   </div>
                 ) : view === 'week' ? (
-                  <div className="calendar-scroll">
-                    <div className="calendar">
-                      <div className="calendar-day-headings">
-                        <div className="timezone-label">{t('ВРЕМЯ')}</div>
-                        {DAYS.map((day, index) => {
-                          const date = addDays(week, index);
-                          const isToday = isCurrent && index === dayIndex;
-                          return (
-                            <div key={day} className={`day-heading ${isToday ? 'is-today' : ''}`}>
-                              <span>
-                                {t(SHORT_DAYS[index])}
-                                <span className="day-full"> · {t(day)}</span>
-                              </span>
-                              <strong>{date.getDate()}</strong>
-                              {isToday && <i />}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="calendar-body" style={{ height: calendarHeight + 18 }}>
-                        <div className="time-axis">
-                          {hours.map((hour) => (
-                            <span key={hour} style={{ top: (hour - startHour) * HOUR_HEIGHT }}>
-                              {String(hour).padStart(2, '0')}:00
-                            </span>
-                          ))}
-                        </div>
-                        {DAYS.map((day, index) => (
-                          <div
-                            className={`day-column ${isCurrent && index === dayIndex ? 'today-column' : ''}`}
-                            key={day}
-                            style={{ height: calendarHeight }}
-                          >
-                            {hours.slice(0, -1).map((hour) => (
+                  <div
+                    className="calendar-scroll"
+                    tabIndex={0}
+                    role="region"
+                    aria-label={t('Расписание по парам')}
+                  >
+                    <table className="period-table" aria-label={t('Расписание по парам')}>
+                      <thead>
+                        <tr>
+                          <th scope="col" className="period-corner">
+                            {t('Пара / время')}
+                          </th>
+                          {DAYS.map((day, index) => (
+                            <th scope="col" key={day}>
                               <div
-                                key={hour}
-                                className="hour-cell"
-                                style={{
-                                  top: (hour - startHour) * HOUR_HEIGHT,
-                                  height: HOUR_HEIGHT,
-                                }}
-                              />
-                            ))}
-                            {visible
-                              .filter((l) => l.day === index)
-                              .map((lesson) => {
-                                const subject = data.subjects.find(
-                                  (s) => s.id === lesson.subjectId,
-                                )!;
-                                const teacher = lessonTeacher(lesson, data);
-                                return (
-                                  <div
-                                    className="calendar-event"
-                                    key={lesson.id}
-                                    style={{
-                                      top:
-                                        (minutes(lesson.start) / 60 - startHour) * HOUR_HEIGHT + 3,
-                                      height:
-                                        ((minutes(lesson.end) - minutes(lesson.start)) / 60) *
-                                          HOUR_HEIGHT -
-                                        6,
-                                    }}
-                                  >
-                                    <LessonCard
-                                      lesson={lesson}
-                                      subject={subject}
-                                      teacher={teacher}
-                                      compact
-                                      onClick={() => setModal({ type: 'lesson', lesson })}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            {index === 5 && !visible.some((l) => l.day === 5) && (
-                              <div className="free-day">
-                                <Coffee size={24} />
-                                <span>{t('Можно выдохнуть')}</span>
-                                <small>{t('День без занятий')}</small>
+                                className={`day-heading ${isCurrent && index === dayIndex ? 'is-today' : ''}`}
+                              >
+                                <span>
+                                  {t(SHORT_DAYS[index])}
+                                  <span className="day-full"> · {t(day)}</span>
+                                </span>
+                                <strong>{addDays(week, index).getDate()}</strong>
                               </div>
-                            )}
-                            {isCurrent &&
-                              index === dayIndex &&
-                              timeNow >= startHour * 60 &&
-                              timeNow <= endHour * 60 && (
-                                <div
-                                  className="now-line"
-                                  style={{ top: (timeNow / 60 - startHour) * HOUR_HEIGHT }}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {periods.map((period) => (
+                          <tr key={`${period.start}-${period.end}`}>
+                            <th scope="row" className="period-axis">
+                              <PeriodLabel period={period} />
+                            </th>
+                            {DAYS.map((day, dayNumber) => {
+                              const lessons = visible.filter(
+                                (lesson) =>
+                                  lesson.day === dayNumber &&
+                                  lesson.start === period.start &&
+                                  lesson.end === period.end,
+                              );
+                              const current =
+                                isCurrent &&
+                                dayNumber === dayIndex &&
+                                timeNow >= minutes(period.start) &&
+                                timeNow < minutes(period.end);
+                              return (
+                                <td
+                                  key={day}
+                                  className={`period-cell ${isCurrent && dayNumber === dayIndex ? 'today-column' : ''} ${current ? 'current-period' : ''}`}
                                 >
-                                  <i />
-                                </div>
-                              )}
-                          </div>
+                                  {lessons.length ? (
+                                    lessons.map((lesson) => (
+                                      <LessonCard
+                                        key={lesson.id}
+                                        lesson={lesson}
+                                        subject={data.subjects.find(
+                                          (subject) => subject.id === lesson.subjectId,
+                                        )!}
+                                        teacher={lessonTeacher(lesson, data)}
+                                        compact
+                                        onClick={() => setModal({ type: 'lesson', lesson })}
+                                      />
+                                    ))
+                                  ) : period.number !== null ? (
+                                    <button
+                                      className="empty-period"
+                                      aria-label={t('Добавить: {day}, пара {number}', {
+                                        day: t(day),
+                                        number: period.number,
+                                      })}
+                                      onClick={() =>
+                                        setModal({
+                                          type: 'lesson',
+                                          slot: {
+                                            day: dayNumber,
+                                            start: period.start,
+                                            end: period.end,
+                                          },
+                                        })
+                                      }
+                                    >
+                                      <Plus size={17} aria-hidden="true" />
+                                    </button>
+                                  ) : (
+                                    <span className="empty-period-mark">—</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
                         ))}
-                      </div>
-                    </div>
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
                   <div className="agenda">
@@ -1194,13 +1193,20 @@ export default function App() {
                             {dayLessons.map((lesson) => {
                               const subject = data.subjects.find((s) => s.id === lesson.subjectId)!;
                               return (
-                                <LessonCard
-                                  key={lesson.id}
-                                  lesson={lesson}
-                                  subject={subject}
-                                  teacher={lessonTeacher(lesson, data)}
-                                  onClick={() => setModal({ type: 'lesson', lesson })}
-                                />
+                                <div className="agenda-entry" key={lesson.id}>
+                                  <PeriodLabel
+                                    period={periods.find(
+                                      (period) =>
+                                        period.start === lesson.start && period.end === lesson.end,
+                                    )!}
+                                  />
+                                  <LessonCard
+                                    lesson={lesson}
+                                    subject={subject}
+                                    teacher={lessonTeacher(lesson, data)}
+                                    onClick={() => setModal({ type: 'lesson', lesson })}
+                                  />
+                                </div>
                               );
                             })}
                           </div>
@@ -1482,6 +1488,7 @@ export default function App() {
           lesson={modal.lesson}
           data={data}
           groupId={group.id}
+          slot={modal.slot}
           onSave={saveLesson}
           onDelete={deleteLesson}
           onClose={() => setModal(null)}

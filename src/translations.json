@@ -20,14 +20,18 @@
   "Начало": ["Boshlanishi", "Start"],
   "Окончание": ["Tugashi", "End"],
   "Время пары": ["Juftlik vaqti", "Class period"],
+  "Автор проекта": ["Loyiha muallifi", "Project author"],
+  "Расписание по парам": ["Juftliklar bo‘yicha jadval", "Schedule by class period"],
+  "Пара / время": ["Juftlik / vaqt", "Period / time"],
+  "Другое время": ["Boshqa vaqt", "Other time"],
+  "Добавить: {day}, пара {number}": [
+    "Qo‘shish: {day}, {number}-juftlik",
+    "Add: {day}, period {number}"
+  ],
   "Пара {number}": ["{number}-juftlik", "Period {number}"],
   "80 минут · между парами 10 минут": [
     "80 daqiqa · juftliklar orasida 10 daqiqa",
     "80 minutes · 10 minutes between periods"
-  ],
-  "Перерыв 12:50–13:30 · 40 минут": [
-    "Tanaffus 12:50–13:30 · 40 daqiqa",
-    "Break 12:50–13:30 · 40 minutes"
   ],
   "Выберите пару из списка.": [
     "Ro‘yxatdan juftlikni tanlang.",
@@ -63,7 +67,7 @@
     "For example, Discrete mathematics"
   ],
   "Введите полное имя": ["To‘liq ismni kiriting", "Enter the full name"],
-  "Например, KI-23": ["Masalan, KI-23", "For example, KI-23"],
+  "Например, KIDT-235": ["Masalan, KIDT-235", "For example, KIDT-235"],
   "Код предмета": ["Fan kodi", "Subject code"],
   "Кафедра": ["Kafedra", "Department"],
   "Направление и курс": ["Yo‘nalish va bosqich", "Programme and year"],

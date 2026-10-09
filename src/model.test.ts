@@ -9,6 +9,7 @@ import {
   validateLesson,
   LESSON_PERIODS,
   isLessonPeriod,
+  schedulePeriods,
   minutes,
   type Lesson,
 } from './model';
@@ -99,6 +100,16 @@ describe('weekly schedule', () => {
 });
 
 describe('class periods', () => {
+  it('keeps six numbered rows even for an empty group', () => {
+    expect(schedulePeriods([]).map((period) => period.number)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(schedulePeriods(createDemo().lessons)).toHaveLength(6);
+  });
+  it('shows custom saved times in separate chronological rows without mislabelling them', () => {
+    const rows = schedulePeriods([candidate(), candidate({ id: 'another-day', day: 0 })]);
+    expect(rows).toHaveLength(7);
+    expect(rows[1]).toEqual({ start: '09:00', end: '10:20', number: null });
+    expect(rows[2]).toEqual({ start: '10:00', end: '11:20', number: 2 });
+  });
   it('offers six 80-minute periods from 08:30, with the last starting at 16:30', () => {
     expect(LESSON_PERIODS).toHaveLength(6);
     expect(LESSON_PERIODS[0].start).toBe('08:30');
