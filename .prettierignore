@@ -4,3 +4,6 @@ package-lock.json
 *.tsbuildinfo
 coverage
 standalone
+docs/index.html
+docs/assets
+docs/favicon.svg
