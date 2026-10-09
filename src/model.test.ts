@@ -7,6 +7,9 @@ import {
   monday,
   parseData,
   validateLesson,
+  LESSON_PERIODS,
+  isLessonPeriod,
+  minutes,
   type Lesson,
 } from './model';
 
@@ -78,7 +81,7 @@ describe('weekly schedule', () => {
   });
   it('permits adjacent lessons and ignores itself when editing', () => {
     const data = createDemo();
-    expect(validateLesson(candidate({ day: 0, start: '14:20', end: '15:00' }), data)).toBeNull();
+    expect(validateLesson(candidate({ day: 0, start: '14:50', end: '15:30' }), data)).toBeNull();
     expect(validateLesson(data.lessons[0], data)).toBeNull();
   });
   it('allows alternating weeks but detects every-week collisions', () => {
@@ -92,6 +95,34 @@ describe('weekly schedule', () => {
     expect(validateLesson(candidate({ end: '09:15' }), createDemo())).toContain('30 минут');
     expect(validateLesson(candidate({ start: '07:00' }), createDemo())).toContain('08:00');
     expect(validateLesson(candidate({ subjectId: 'missing' }), createDemo())).toContain('предмет');
+  });
+});
+
+describe('class periods', () => {
+  it('offers six 80-minute periods from 08:30, with the last starting at 16:30', () => {
+    expect(LESSON_PERIODS).toHaveLength(6);
+    expect(LESSON_PERIODS[0].start).toBe('08:30');
+    expect(LESSON_PERIODS.at(-1)).toEqual({ start: '16:30', end: '17:50' });
+    for (const period of LESSON_PERIODS) {
+      expect(minutes(period.end) - minutes(period.start)).toBe(80);
+    }
+    const breaks = LESSON_PERIODS.slice(1).map(
+      (period, index) => minutes(period.start) - minutes(LESSON_PERIODS[index].end),
+    );
+    expect(breaks).toEqual([10, 10, 40, 10, 10]);
+    expect(LESSON_PERIODS[2].end).toBe('12:50');
+  });
+  it('requires an exact start/end pair and uses those periods in the starter schedule', () => {
+    for (const period of LESSON_PERIODS) expect(isLessonPeriod(period)).toBe(true);
+    expect(isLessonPeriod({ start: '08:30', end: '10:00' })).toBe(false);
+    expect(isLessonPeriod({ start: '18:00', end: '19:20' })).toBe(false);
+    expect(isLessonPeriod({ start: '09:00', end: '10:20' })).toBe(false);
+    for (const lesson of createDemo().lessons) expect(isLessonPeriod(lesson)).toBe(true);
+  });
+  it('keeps older saved times readable without silently changing them', () => {
+    const data = createDemo();
+    data.lessons = [candidate()];
+    expect(parseData(JSON.stringify(data)).lessons[0]).toEqual(candidate());
   });
 });
 

@@ -19,6 +19,24 @@
   "Повторение": ["Takrorlanishi", "Repeat"],
   "Начало": ["Boshlanishi", "Start"],
   "Окончание": ["Tugashi", "End"],
+  "Время пары": ["Juftlik vaqti", "Class period"],
+  "Пара {number}": ["{number}-juftlik", "Period {number}"],
+  "80 минут · между парами 10 минут": [
+    "80 daqiqa · juftliklar orasida 10 daqiqa",
+    "80 minutes · 10 minutes between periods"
+  ],
+  "Перерыв 12:50–13:30 · 40 минут": [
+    "Tanaffus 12:50–13:30 · 40 daqiqa",
+    "Break 12:50–13:30 · 40 minutes"
+  ],
+  "Выберите пару из списка.": [
+    "Ro‘yxatdan juftlikni tanlang.",
+    "Select a class period from the list."
+  ],
+  "Сохранённое время: {start}–{end}. Выберите пару из списка.": [
+    "Saqlangan vaqt: {start}–{end}. Ro‘yxatdan juftlikni tanlang.",
+    "Saved time: {start}–{end}. Select a class period from the list."
+  ],
   "Аудитория": ["Xona", "Room"],
   "Например, 301": ["Masalan, 301", "For example, 301"],
   "Заметка": ["Izoh", "Note"],

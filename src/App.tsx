@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -34,6 +34,8 @@ import {
   TONES,
   TYPES,
   FREQUENCIES,
+  LESSON_PERIODS,
+  isLessonPeriod,
   STORAGE_KEY,
   activeInWeek,
   addDays,
@@ -161,8 +163,7 @@ function LessonForm({
       subjectId: data.subjects[0].id,
       groupId,
       day: (new Date().getDay() + 6) % 7 > 5 ? 0 : (new Date().getDay() + 6) % 7,
-      start: '09:00',
-      end: '10:20',
+      ...LESSON_PERIODS[0],
       room: '',
       type: 'Лекция',
       frequency: 'every',
@@ -178,6 +179,10 @@ function LessonForm({
   function submit(event: FormEvent) {
     event.preventDefault();
     const clean = { ...draft, room: draft.room.trim(), note: draft.note.trim() };
+    if (!isLessonPeriod(clean)) {
+      setError('Выберите пару из списка.');
+      return;
+    }
     const issue = validateLesson(clean, data);
     if (issue) {
       setError(issue);
@@ -258,40 +263,64 @@ function LessonForm({
             </select>
           </label>
         </div>
-        <div className="form-row time-row">
-          <label>
-            {t('Начало')}{' '}
-            <input
-              required
-              type="time"
-              min="08:00"
-              max="19:30"
-              value={draft.start}
-              onChange={(e) => set('start', e.target.value)}
-            />
-          </label>
-          <label>
-            {t('Окончание')}{' '}
-            <input
-              required
-              type="time"
-              min="08:30"
-              max="20:00"
-              value={draft.end}
-              onChange={(e) => set('end', e.target.value)}
-            />
-          </label>
-          <label>
-            {t('Аудитория')}{' '}
-            <input
-              required
-              maxLength={60}
-              placeholder={t('Например, 301')}
-              value={draft.room}
-              onChange={(e) => set('room', e.target.value)}
-            />
-          </label>
-        </div>
+        <fieldset className="period-picker" aria-describedby="period-hint">
+          <legend>{t('Время пары')}</legend>
+          <p id="period-hint" className="period-hint">
+            {t('80 минут · между парами 10 минут')}
+          </p>
+          {lesson && !isLessonPeriod(draft) && (
+            <p className="period-previous">
+              {t('Сохранённое время: {start}–{end}. Выберите пару из списка.', {
+                start: draft.start,
+                end: draft.end,
+              })}
+            </p>
+          )}
+          <div className="period-grid">
+            {LESSON_PERIODS.map((period, index) => (
+              <Fragment key={period.start}>
+                {index === 3 && (
+                  <div className="period-break">
+                    <Coffee size={15} aria-hidden="true" />
+                    {t('Перерыв 12:50–13:30 · 40 минут')}
+                  </div>
+                )}
+                <label className="period-option">
+                  <input
+                    type="radio"
+                    name="lesson-period"
+                    value={period.start}
+                    required
+                    checked={draft.start === period.start && draft.end === period.end}
+                    onChange={() => {
+                      setDraft((current) => ({ ...current, ...period }));
+                      setError('');
+                    }}
+                  />
+                  <span className="period-card">
+                    <span className="period-number">
+                      {t('Пара {number}', { number: index + 1 })}
+                    </span>
+                    <strong>
+                      {period.start}–{period.end}
+                    </strong>
+                    <Check className="period-check" size={14} aria-hidden="true" />
+                  </span>
+                </label>
+              </Fragment>
+            ))}
+          </div>
+        </fieldset>
+        <label>
+          {t('Аудитория')}{' '}
+          <input
+            required
+            maxLength={60}
+            placeholder={t('Например, 301')}
+            value={draft.room}
+            onChange={(e) => set('room', e.target.value)}
+          />
+        </label>
         <label>
           {t('Заметка')} <span className="optional">{t('необязательно')}</span>
           <textarea
