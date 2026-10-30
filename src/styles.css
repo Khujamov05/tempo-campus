@@ -2406,3 +2406,108 @@ h1 {
     break-inside: avoid;
   }
 }
+
+/* Accounts and shared timetable */
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f4f5f0;
+}
+.auth-card {
+  width: min(100%, 460px);
+  background: white;
+  border: 1px solid #e1e5db;
+  border-radius: 24px;
+  padding: 32px;
+}
+.auth-brand {
+  font-size: 36px;
+  font-weight: 800;
+  color: #44634c;
+  margin-bottom: 20px;
+}
+.auth-card form,
+.auth-card label {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.auth-card input,
+.auth-card select,
+.account-bar select,
+.account-toolbar select {
+  padding: 12px;
+  border: 1px solid #ccd4c9;
+  border-radius: 10px;
+  background: white;
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+}
+.auth-card p {
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.auth-error {
+  color: #9d3029;
+}
+.account-bar {
+  background: white;
+  border: 1px solid #e1e5db;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.account-bar span,
+.account-bar small {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.account-actions,
+.account-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.account-toolbar {
+  margin-bottom: 24px;
+  padding: 14px;
+  background: #edf2e8;
+  border-radius: 12px;
+}
+.account-toolbar label {
+  display: grid;
+  gap: 6px;
+}
+.roles-panel {
+  width: 100%;
+}
+.roles-panel form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  border-top: 1px solid #ddd;
+  padding: 16px 0;
+}
+.roles-panel label {
+  display: grid;
+  gap: 6px;
+  max-width: 100%;
+}
+.roles-panel small {
+  width: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}

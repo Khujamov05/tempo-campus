@@ -19,6 +19,7 @@
     "deploy": "npm test && npm run build && node scripts/publish.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^1.53.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

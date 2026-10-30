@@ -374,5 +374,93 @@
   ],
   "Ответственный преподаватель": ["Dars o‘qituvchisi", "Lesson teacher"],
   "По умолчанию для предмета": ["Fan bo‘yicha asosiy o‘qituvchi", "Subject’s default teacher"],
-  "· время местное": [" · mahalliy vaqt", " · local time"]
+  "· время местное": [" · mahalliy vaqt", " · local time"],
+  "Войти в Tempo": ["Tempo tizimiga kirish", "Sign in to Tempo"],
+  "Войти": ["Kirish", "Sign in"],
+  "Создать аккаунт": ["Hisob yaratish", "Create account"],
+  "Пароль": ["Parol", "Password"],
+  "Загрузка…": ["Yuklanmoqda…", "Loading…"],
+  "Ошибка подключения": ["Ulanishda xatolik", "Connection error"],
+  "Выйти": ["Chiqish", "Sign out"],
+  "Обновить": ["Yangilash", "Refresh"],
+  "Закрыть": ["Yopish", "Close"],
+  "Сохранить": ["Saqlash", "Save"],
+  "Роль": ["Rol", "Role"],
+  "Показывать": ["Ko‘rsatish", "Show"],
+  "Студент": ["Talaba", "Student"],
+  "Администратор": ["Administrator", "Administrator"],
+  "Управление ролями": ["Rollarni boshqarish", "Manage roles"],
+  "Роль сохранена": ["Rol saqlandi", "Role saved"],
+  "Общее расписание": ["Umumiy jadval", "Shared schedule"],
+  "Общее расписание · только просмотр": [
+    "Umumiy jadval · faqat ko‘rish",
+    "Shared schedule · read only"
+  ],
+  "Мои занятия — все группы": ["Mening darslarim — barcha guruhlar", "My lessons — all groups"],
+  "Расписание группы": ["Guruh jadvali", "Group schedule"],
+  "Опубликовать изменения": ["O‘zgarishlarni e’lon qilish", "Publish changes"],
+  "Всё опубликовано": ["Barchasi e’lon qilingan", "All changes published"],
+  "Расписание опубликовано": ["Jadval e’lon qilindi", "Schedule published"],
+  "Занятий на эту неделю нет.": ["Bu haftada darslar yo‘q.", "No lessons this week."],
+  "Вход защищён Supabase Auth": [
+    "Kirish Supabase Auth bilan himoyalangan",
+    "Sign-in protected by Supabase Auth"
+  ],
+  "Одно расписание для студентов и преподавателей.": [
+    "Talabalar va o‘qituvchilar uchun yagona jadval.",
+    "One timetable for students and teachers."
+  ],
+  "Уже есть аккаунт? Войти": ["Hisobingiz bormi? Kirish", "Already have an account? Sign in"],
+  "Новый пользователь? Регистрация": [
+    "Yangi foydalanuvchimisiz? Ro‘yxatdan o‘tish",
+    "New here? Register"
+  ],
+  "Новые аккаунты получают роль студента. Роль преподавателя назначает администратор.": [
+    "Yangi hisobga talaba roli beriladi. O‘qituvchi rolini administrator tayinlaydi.",
+    "New accounts start as students. An administrator assigns teacher roles."
+  ],
+  "Подтвердите email по ссылке в письме, затем войдите.": [
+    "Xatdagi havola orqali emailingizni tasdiqlang, so‘ng kiring.",
+    "Confirm your email using the link in the message, then sign in."
+  ],
+  "Не удалось загрузить общее расписание.": [
+    "Umumiy jadvalni yuklab bo‘lmadi.",
+    "Could not load the shared schedule."
+  ],
+  "Нет прав на изменение расписания": [
+    "Jadvalni o‘zgartirish huquqi yo‘q",
+    "No permission to edit the schedule"
+  ],
+  "Расписание изменилось. Сохраните копию своих правок и обновите страницу.": [
+    "Jadval o‘zgargan. Tuzatishlaringiz nusxasini saqlang va sahifani yangilang.",
+    "The schedule has changed. Back up your edits and refresh the page."
+  ],
+  "Пользователь сообщает свой ID из профиля. Изменения роли применятся после повторного входа.": [
+    "Foydalanuvchi profilidagi ID raqamini beradi. Rol o‘zgarishi qayta kirgandan keyin qo‘llanadi.",
+    "Ask the user for their profile ID. Role changes take effect after signing in again."
+  ],
+  "Общее расписание. Изменения видны всем после публикации.": [
+    "Umumiy jadval. O‘zgarishlar e’lon qilingandan keyin barchaga ko‘rinadi.",
+    "Shared schedule. Changes are visible to everyone after publishing."
+  ],
+  "Общее расписание хранится в облаке. JSON содержит резервную копию расписания.": [
+    "Umumiy jadval bulutda saqlanadi. JSON faylida jadvalning zaxira nusxasi bor.",
+    "The shared schedule is stored in the cloud. JSON contains a timetable backup."
+  ],
+  "Чтобы получить последние изменения расписания, обновите страницу.": [
+    "Jadvalning so‘nggi o‘zgarishlarini olish uchun sahifani yangilang.",
+    "Refresh the page to load the latest schedule."
+  ],
+  "Расписание общее для всех пользователей. Изменения публикует администратор.": [
+    "Jadval barcha foydalanuvchilar uchun umumiy. O‘zgarishlarni administrator e’lon qiladi.",
+    "All users share this schedule. An administrator publishes changes."
+  ],
+  "Есть неопубликованные изменения. Выйти без сохранения?": [
+    "E’lon qilinmagan o‘zgarishlar bor. Saqlamasdan chiqasizmi?",
+    "There are unpublished changes. Sign out without saving?"
+  ],
+  "Учётную запись выдаёт администратор. Роль преподавателя связывается с вашим именем в справочнике.": [
+    "Hisobni administrator beradi. O‘qituvchi roli katalogdagi ismingiz bilan bog‘lanadi.",
+    "Your administrator provides an account. Teacher accounts are linked to your entry in the directory."
+  ]
 }

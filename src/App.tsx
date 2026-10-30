@@ -64,6 +64,7 @@ import {
 } from './model';
 
 import { useI18n, languageNames, type Language } from './i18n';
+import { accountLessons, defaultScope, type Profile } from './access';
 
 type Page = 'schedule' | 'subjects' | 'teachers' | 'settings';
 type ModalState =
@@ -526,12 +527,14 @@ function LessonCard({
   teacher,
   onClick,
   compact = false,
+  groupName,
 }: {
   lesson: Lesson;
   subject: Subject;
   teacher?: Teacher;
   onClick: () => void;
   compact?: boolean;
+  groupName?: string;
 }) {
   const { t } = useI18n();
 
@@ -547,6 +550,7 @@ function LessonCard({
         </span>
       </div>
       <h3>{subject.name}</h3>
+      {groupName && <strong>{groupName}</strong>}
       <div className="lesson-details">
         <span>
           <MapPin size={12} />
@@ -604,21 +608,55 @@ function SubjectPicker({
   );
 }
 
-export default function App() {
+export default function App({
+  cloud,
+}: {
+  cloud?: {
+    data: Data;
+    profile: Profile;
+    publish: (data: Data) => Promise<void>;
+    accountBar: ReactNode;
+    onDirty: (dirty: boolean) => void;
+  };
+}) {
   const { t, language, setLanguage, plural, dateLabel } = useI18n();
 
-  const [initial] = useState(loadData);
+  const [initial] = useState(() => (cloud ? { data: cloud.data, warning: '' } : loadData()));
+  const canEdit = !cloud || cloud.profile.role === 'admin';
+  const [scope, setScope] = useState<'mine' | 'group'>(() =>
+    cloud ? defaultScope(cloud.profile) : 'group',
+  );
+  const [dirty, setDirty] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  useEffect(() => {
+    cloud?.onDirty(dirty);
+  }, [dirty, cloud?.onDirty]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
   const [data, setData] = useState(initial.data);
   const [warning, setWarning] = useState(initial.warning);
   const [page, setPage] = useState<Page>('schedule');
   const [week, setWeek] = useState(() => monday(new Date()));
-  const [groupId, setGroupId] = useState(data.groups[0].id);
+  const [groupId, setGroupId] = useState(cloud?.profile.group_id || data.groups[0].id);
   const [query, setQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('all');
   const [teacherFilter, setTeacherFilter] = useState('');
   const [filter, setFilter] = useState('all');
   const [view, setView] = useState<'week' | 'list'>('week');
-  const [modal, setModal] = useState<ModalState>(null);
+  const [modal, updateModal] = useState<ModalState>(null);
+  function setModal(next: ModalState) {
+    if (!canEdit && next && next.type !== 'help') {
+      if (next.type === 'lesson' && next.lesson) updateModal(next);
+      return;
+    }
+    if (!publishing) updateModal(next);
+  }
   const [toast, setToast] = useState('');
   const [mobileNav, setMobileNav] = useState(false);
   const [clock, setClock] = useState(() => new Date());
@@ -641,7 +679,12 @@ export default function App() {
     setToast(message);
   }
   function persist(next: Data) {
+    if (!canEdit || publishing) return;
     setData(next);
+    if (cloud) {
+      setDirty(true);
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setWarning('');
@@ -678,7 +721,9 @@ export default function App() {
     setToast('Занятие удалено');
   }
   const group = data.groups.find((g) => g.id === groupId) ?? data.groups[0];
-  const weekLessons = data.lessons.filter((l) => l.groupId === group.id && activeInWeek(l, week));
+  const weekLessons = cloud
+    ? accountLessons(data, cloud.profile, week, scope, group.id)
+    : data.lessons.filter((l) => l.groupId === group.id && activeInWeek(l, week));
   const search = query.trim().toLocaleLowerCase();
   const hasScheduleFilters = subjectFilter !== 'all' || teacherFilter !== '' || filter !== 'all';
   const visible = weekLessons
@@ -854,6 +899,60 @@ export default function App() {
           </div>
         </header>
         <main>
+          {cloud?.accountBar}
+          {cloud && (
+            <div className="account-toolbar">
+              {cloud.profile.role === 'teacher' && (
+                <label>
+                  {t('Показывать')}
+                  <select
+                    value={scope}
+                    onChange={(e) => {
+                      setScope(e.target.value as 'mine' | 'group');
+                      setTeacherFilter('');
+                    }}
+                  >
+                    <option value="mine">{t('Мои занятия — все группы')}</option>
+                    <option value="group">{t('Расписание группы')}</option>
+                  </select>
+                </label>
+              )}
+              <span>
+                {t(
+                  canEdit
+                    ? 'Общее расписание. Изменения видны всем после публикации.'
+                    : 'Общее расписание · только просмотр',
+                )}
+              </span>
+              {canEdit && (
+                <button
+                  className="button primary"
+                  disabled={!dirty || publishing}
+                  onClick={async () => {
+                    setPublishing(true);
+                    setWarning('');
+                    try {
+                      await cloud.publish(data);
+                      setDirty(false);
+                      notify('Расписание опубликовано');
+                    } catch (e) {
+                      setWarning(e instanceof Error ? e.message : 'Ошибка подключения');
+                    } finally {
+                      setPublishing(false);
+                    }
+                  }}
+                >
+                  {t(
+                    publishing
+                      ? 'Загрузка…'
+                      : dirty
+                        ? 'Опубликовать изменения'
+                        : 'Всё опубликовано',
+                  )}
+                </button>
+              )}
+            </div>
+          )}
           {warning && (
             <div className="warning" role="alert">
               {t(warning)}
@@ -879,28 +978,29 @@ export default function App() {
                       : t('Твоё пространство работает по твоим правилам.')}
               </p>
             </div>
-            {page === 'schedule' ? (
-              <button
-                className="button primary add-main"
-                onClick={() => setModal({ type: 'lesson' })}
-              >
-                <Plus size={18} />
-                {t('Добавить занятие')}{' '}
-              </button>
-            ) : page === 'subjects' || page === 'teachers' ? (
-              <button
-                className="button primary"
-                onClick={() => setModal({ type: page === 'subjects' ? 'subject' : 'teacher' })}
-              >
-                <Plus size={18} />
-                {page === 'subjects' ? t('Добавить предмет') : t('Добавить преподавателя')}
-              </button>
-            ) : (
-              <div className="privacy-badge">
-                <span className="online-dot" />
-                {t('Локальное пространство')}{' '}
-              </div>
-            )}
+            {canEdit &&
+              (page === 'schedule' ? (
+                <button
+                  className="button primary add-main"
+                  onClick={() => setModal({ type: 'lesson' })}
+                >
+                  <Plus size={18} />
+                  {t('Добавить занятие')}{' '}
+                </button>
+              ) : page === 'subjects' || page === 'teachers' ? (
+                <button
+                  className="button primary"
+                  onClick={() => setModal({ type: page === 'subjects' ? 'subject' : 'teacher' })}
+                >
+                  <Plus size={18} />
+                  {page === 'subjects' ? t('Добавить предмет') : t('Добавить преподавателя')}
+                </button>
+              ) : (
+                <div className="privacy-badge">
+                  <span className="online-dot" />
+                  {t(cloud ? 'Общее расписание' : 'Локальное пространство')}{' '}
+                </div>
+              ))}
           </section>
 
           {page === 'schedule' && (
@@ -1020,6 +1120,7 @@ export default function App() {
                       <select
                         aria-label={t('Учебная группа')}
                         value={group.id}
+                        disabled={cloud?.profile.role === 'teacher' && scope === 'mine'}
                         onChange={(e) => setGroupId(e.target.value)}
                       >
                         {data.groups.map((g) => (
@@ -1093,9 +1194,14 @@ export default function App() {
                     <p>
                       {hasScheduleFilters
                         ? t('Выберите другой предмет или сбросьте фильтры.')
-                        : t('Добавь первое занятие и задай свой ритм.')}
+                        : t(
+                            canEdit
+                              ? 'Добавь первое занятие и задай свой ритм.'
+                              : 'Занятий на эту неделю нет.',
+                          )}
                     </p>
                     <button
+                      hidden={!canEdit && !hasScheduleFilters}
                       className="button secondary"
                       onClick={() => {
                         if (hasScheduleFilters) {
@@ -1168,11 +1274,16 @@ export default function App() {
                                           (subject) => subject.id === lesson.subjectId,
                                         )!}
                                         teacher={lessonTeacher(lesson, data)}
+                                        groupName={
+                                          scope === 'mine'
+                                            ? data.groups.find((g) => g.id === lesson.groupId)?.name
+                                            : undefined
+                                        }
                                         compact
                                         onClick={() => setModal({ type: 'lesson', lesson })}
                                       />
                                     ))
-                                  ) : period.number !== null ? (
+                                  ) : period.number !== null && canEdit ? (
                                     <button
                                       className="empty-period"
                                       aria-label={t('Добавить: {day}, пара {number}', {
@@ -1235,6 +1346,11 @@ export default function App() {
                                     lesson={lesson}
                                     subject={subject}
                                     teacher={lessonTeacher(lesson, data)}
+                                    groupName={
+                                      scope === 'mine'
+                                        ? data.groups.find((g) => g.id === lesson.groupId)?.name
+                                        : undefined
+                                    }
                                     onClick={() => setModal({ type: 'lesson', lesson })}
                                   />
                                 </div>
@@ -1438,7 +1554,11 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                <button className="button secondary" onClick={() => setModal({ type: 'group' })}>
+                <button
+                  hidden={!canEdit}
+                  className="button secondary"
+                  onClick={() => setModal({ type: 'group' })}
+                >
                   <Plus size={16} />
                   {t('Добавить группу')}{' '}
                 </button>
@@ -1450,7 +1570,9 @@ export default function App() {
                 <h2>{t('Твои данные — с тобой')}</h2>
                 <p>
                   {t(
-                    'Расписание сохраняется в этом браузере. Скачай копию, чтобы перенести его на другое устройство или сохранить перед очисткой браузера.',
+                    cloud
+                      ? 'Общее расписание хранится в облаке. JSON содержит резервную копию расписания.'
+                      : 'Расписание сохраняется в этом браузере. Скачай копию, чтобы перенести его на другое устройство или сохранить перед очисткой браузера.',
                   )}{' '}
                 </p>
                 <div className="settings-actions">
@@ -1468,7 +1590,11 @@ export default function App() {
                     <Download size={16} />
                     {t('Скачать копию JSON')}{' '}
                   </button>
-                  <button className="button secondary" onClick={() => fileInput.current?.click()}>
+                  <button
+                    hidden={!canEdit}
+                    className="button secondary"
+                    onClick={() => fileInput.current?.click()}
+                  >
                     <Upload size={16} />
                     {t('Импортировать копию')}{' '}
                   </button>
@@ -1482,7 +1608,9 @@ export default function App() {
                 </div>
                 <div className="settings-fact">
                   <Check size={16} />
-                  {t('Без регистрации и внешних сервисов')}{' '}
+                  {t(
+                    cloud ? 'Вход защищён Supabase Auth' : 'Без регистрации и внешних сервисов',
+                  )}{' '}
                 </div>
               </section>
               <section className="settings-card full-width">
@@ -1494,12 +1622,20 @@ export default function App() {
                     )}{' '}
                   </p>
                 </div>
-                <button className="button secondary" onClick={() => setModal({ type: 'reset' })}>
+                <button
+                  hidden={!canEdit}
+                  className="button secondary"
+                  onClick={() => setModal({ type: 'reset' })}
+                >
                   {t('Восстановить демоданные')}{' '}
                 </button>
               </section>
               <p className="settings-footnote">
-                {t('Личный планировщик. Данные не синхронизируются между устройствами.')}{' '}
+                {t(
+                  cloud
+                    ? 'Чтобы получить последние изменения расписания, обновите страницу.'
+                    : 'Личный планировщик. Данные не синхронизируются между устройствами.',
+                )}{' '}
               </p>
             </div>
           )}
@@ -1518,7 +1654,24 @@ export default function App() {
         </main>
       </div>
 
-      {modal?.type === 'lesson' && (
+      {modal?.type === 'lesson' && !canEdit && modal.lesson && (
+        <Modal
+          title={
+            data.subjects.find((s) => s.id === modal.lesson?.subjectId)?.name || t('Детали занятия')
+          }
+          onClose={() => setModal(null)}
+        >
+          <p>{lessonTeacher(modal.lesson, data)?.name}</p>
+          <p>
+            {data.groups.find((g) => g.id === modal.lesson?.groupId)?.name} · {modal.lesson.room}
+          </p>
+          <p>
+            {modal.lesson.start}–{modal.lesson.end} · {t(modal.lesson.type)}
+          </p>
+          <p>{modal.lesson.note}</p>
+        </Modal>
+      )}
+      {modal?.type === 'lesson' && canEdit && (
         <LessonForm
           lesson={modal.lesson}
           data={data}
@@ -1578,9 +1731,11 @@ export default function App() {
             <p>
               <Settings2 size={21} />
               <span>
-                <strong>{t('Только в этом браузере')}</strong>
+                <strong>{t(cloud ? 'Общее расписание' : 'Только в этом браузере')}</strong>
                 {t(
-                  'Это личное пространство без сервера и входа. Делай резервные копии в настройках; синхронизации между устройствами нет.',
+                  cloud
+                    ? 'Расписание общее для всех пользователей. Изменения публикует администратор.'
+                    : 'Это личное пространство без сервера и входа. Делай резервные копии в настройках; синхронизации между устройствами нет.',
                 )}{' '}
               </span>
             </p>
