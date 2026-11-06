@@ -462,5 +462,160 @@
   "Учётную запись выдаёт администратор. Роль преподавателя связывается с вашим именем в справочнике.": [
     "Hisobni administrator beradi. O‘qituvchi roli katalogdagi ismingiz bilan bog‘lanadi.",
     "Your administrator provides an account. Teacher accounts are linked to your entry in the directory."
-  ]
+  ],
+  "Заявки на изменения": ["O‘zgarish so‘rovlari", "Change requests"],
+  "История изменений": ["O‘zgarishlar tarixi", "Change history"],
+  "ВАШ ДЕНЬ": ["BUGUNGI KUNINGIZ", "YOUR DAY"],
+  "Завершено": ["Tugagan", "Finished"],
+  "Через {minutes} мин": ["{minutes} daqiqadan keyin", "In {minutes} min"],
+  "На сегодня занятий нет.": ["Bugun darslar yo‘q.", "No lessons today."],
+  "Есть новая опубликованная версия. Сохраните копию черновика перед обновлением страницы.": [
+    "Yangi jadval e’lon qilindi. Sahifani yangilashdan oldin qoralama nusxasini saqlang.",
+    "A newer timetable is available. Back up your draft before reloading."
+  ],
+  "Расписание обновилось автоматически": [
+    "Jadval avtomatik yangilandi",
+    "Timetable updated automatically"
+  ],
+  "Понятно": ["Tushunarli", "Got it"],
+  "Найдите пользователя по имени или email. Изменения роли применятся автоматически.": [
+    "Foydalanuvchini ism yoki email orqali toping. Rol o‘zgarishlari avtomatik qo‘llanadi.",
+    "Find a user by name or email. Role changes apply automatically."
+  ],
+  "Найти пользователя": ["Foydalanuvchini topish", "Find a user"],
+  "Данные изменились. Обновите список и проверьте заявку заново.": [
+    "Ma’lumotlar o‘zgardi. Ro‘yxatni yangilab, so‘rovni qayta tekshiring.",
+    "Data has changed. Refresh the list and review the request again."
+  ],
+  "Есть пересечение по группе, преподавателю или аудитории.": [
+    "Guruh, o‘qituvchi yoki xonada vaqt to‘qnashuvi bor.",
+    "A group, teacher or room has a timetable conflict."
+  ],
+  "Для этой пары уже есть заявка на рассмотрении.": [
+    "Bu juftlik uchun so‘rov allaqachon ko‘rib chiqilmoqda.",
+    "This lesson already has a pending request."
+  ],
+  "Недостаточно прав для этого действия.": [
+    "Bu amal uchun ruxsat yetarli emas.",
+    "You do not have permission for this action."
+  ],
+  "Сначала обновите привязку аккаунтов к группам и преподавателям.": [
+    "Avval hisoblarning guruh va o‘qituvchi bilan bog‘lanishini yangilang.",
+    "Update account links to groups and teachers first."
+  ],
+  "Проверьте даты, время и обязательные поля. Прошедшие пары изменить нельзя.": [
+    "Sana, vaqt va majburiy maydonlarni tekshiring. O‘tgan darslarni o‘zgartirib bo‘lmaydi.",
+    "Check dates, times and required fields. Past lessons cannot be changed."
+  ],
+  "Не удалось выполнить действие. Проверьте соединение и повторите попытку.": [
+    "Amal bajarilmadi. Ulanishni tekshirib, qayta urinib ko‘ring.",
+    "Could not complete the action. Check your connection and try again."
+  ],
+  "На рассмотрении": ["Ko‘rib chiqilmoqda", "Pending"],
+  "Одобрено": ["Tasdiqlangan", "Approved"],
+  "Возвращено": ["Qaytarilgan", "Returned"],
+  "Отозвано": ["Qaytarib olingan", "Withdrawn"],
+  "Начальная версия": ["Boshlang‘ich versiya", "Initial version"],
+  "Опубликовано расписание": ["Jadval e’lon qilindi", "Timetable published"],
+  "Одобрена заявка": ["So‘rov tasdiqlandi", "Request approved"],
+  "Восстановлена версия": ["Versiya tiklandi", "Version restored"],
+  "Версия": ["Versiya", "Version"],
+  "Пара отменена": ["Dars bekor qilindi", "Lesson cancelled"],
+  "Не удалось загрузить изменения.": ["O‘zgarishlarni yuklab bo‘lmadi.", "Could not load changes."],
+  "Заявка отправлена": ["So‘rov yuborildi", "Request submitted"],
+  "СОГЛАСОВАННОЕ РАСПИСАНИЕ": ["KELISHILGAN JADVAL", "COORDINATED TIMETABLE"],
+  "Изменения под контролем": ["O‘zgarishlar nazoratda", "Changes under control"],
+  "Перенос одной пары не меняет остальные недели.": [
+    "Bitta darsni ko‘chirish boshqa haftalarga ta’sir qilmaydi.",
+    "Moving one lesson leaves other weeks unchanged."
+  ],
+  "Каждая публикация сохраняется отдельной версией.": [
+    "Har bir e’lon alohida versiya sifatida saqlanadi.",
+    "Each publication is saved as a separate version."
+  ],
+  "Новая заявка": ["Yangi so‘rov", "New request"],
+  "Сначала опубликуйте или сохраните копию черновика. Заявки и восстановление работают с опубликованным расписанием.": [
+    "Avval qoralamani e’lon qiling yoki nusxasini saqlang. So‘rovlar va tiklash e’lon qilingan jadval bilan ishlaydi.",
+    "Publish or back up your draft first. Requests and restores use the published timetable."
+  ],
+  "Предложить изменение": ["O‘zgarish taklif qilish", "Propose a change"],
+  "Дата занятия": ["Dars sanasi", "Lesson date"],
+  "Занятие": ["Dars", "Lesson"],
+  "Выберите занятие": ["Darsni tanlang", "Choose a lesson"],
+  "Действие": ["Amal", "Action"],
+  "Перенести пару": ["Darsni ko‘chirish", "Move lesson"],
+  "Отменить пару": ["Darsni bekor qilish", "Cancel lesson"],
+  "Новая дата": ["Yangi sana", "New date"],
+  "Пара": ["Juftlik", "Period"],
+  "Причина изменения": ["O‘zgarish sababi", "Reason for change"],
+  "На эту дату доступных занятий нет.": [
+    "Bu sanada mavjud darslar yo‘q.",
+    "No eligible lessons on this date."
+  ],
+  "Заявку можно отправить, но одобрение требует устранения конфликтов.": [
+    "So‘rovni yuborish mumkin, ammo tasdiqlash uchun to‘qnashuvlar bartaraf etilishi kerak.",
+    "You can submit the request, but conflicts must be resolved before approval."
+  ],
+  "Отправить на согласование": ["Tasdiqlashga yuborish", "Submit for approval"],
+  "С конфликтами": ["To‘qnashuvlar bor", "With conflicts"],
+  "Статус": ["Holat", "Status"],
+  "Все заявки": ["Barcha so‘rovlar", "All requests"],
+  "Здесь пока нет заявок": ["Hozircha so‘rovlar yo‘q", "No requests here yet"],
+  "Новые предложения появятся в этом списке.": [
+    "Yangi takliflar shu ro‘yxatda paydo bo‘ladi.",
+    "New proposals will appear in this list."
+  ],
+  "Заявка на отмену": ["Bekor qilish so‘rovi", "Cancellation request"],
+  "Заявка на перенос пары": ["Darsni ko‘chirish so‘rovi", "Lesson change request"],
+  "Предлагается": ["Taklif", "Proposed"],
+  "Меняется только выбранная дата. Недельный шаблон сохраняется.": [
+    "Faqat tanlangan sana o‘zgaradi. Haftalik jadval saqlanadi.",
+    "Only the selected date changes. The weekly template stays in place."
+  ],
+  "Проверка конфликтов": ["To‘qnashuvlarni tekshirish", "Conflict check"],
+  "Пересечений по группе, преподавателю и аудитории нет.": [
+    "Guruh, o‘qituvchi va xonada to‘qnashuv yo‘q.",
+    "No group, teacher or room conflicts."
+  ],
+  "При одобрении сервер повторит проверку.": [
+    "Tasdiqlashda server qayta tekshiradi.",
+    "The server checks again on approval."
+  ],
+  "Комментарий администратора": ["Administrator izohi", "Administrator comment"],
+  "Изменение опубликовано": ["O‘zgarish e’lon qilindi", "Change published"],
+  "Одобрить и опубликовать": ["Tasdiqlash va e’lon qilish", "Approve and publish"],
+  "Заявка возвращена с комментарием": [
+    "So‘rov izoh bilan qaytarildi",
+    "Request returned with a comment"
+  ],
+  "Вернуть на доработку": ["Tuzatish uchun qaytarish", "Return for revision"],
+  "Заявка отозвана": ["So‘rov qaytarib olindi", "Request withdrawn"],
+  "Отозвать заявку": ["So‘rovni qaytarib olish", "Withdraw request"],
+  "Показаны последние 200 заявок. Список обновляется автоматически.": [
+    "Oxirgi 200 ta so‘rov ko‘rsatilgan. Ro‘yxat avtomatik yangilanadi.",
+    "Showing the latest 200 requests. The list updates automatically."
+  ],
+  "Открыть версию": ["Versiyani ochish", "Open version"],
+  "Показаны последние 50 публикаций.": [
+    "Oxirgi 50 ta e’lon ko‘rsatilgan.",
+    "Showing the latest 50 publications."
+  ],
+  "Просмотр версии": ["Versiyani ko‘rish", "Version preview"],
+  "Недельный шаблон": ["Haftalik jadval", "Weekly template"],
+  "День": ["Kun", "Day"],
+  "Время": ["Vaqt", "Time"],
+  "Изменения отдельных дат": ["Alohida sanalardagi o‘zgarishlar", "Changes on specific dates"],
+  "Восстановить выбранную версию для всех пользователей? Текущая версия останется в истории.": [
+    "Tanlangan versiya barcha foydalanuvchilar uchun tiklansinmi? Joriy versiya tarixda qoladi.",
+    "Restore this version for everyone? The current version will remain in history."
+  ],
+  "Версия восстановлена": ["Versiya tiklandi", "Version restored"],
+  "Восстановить эту версию": ["Shu versiyani tiklash", "Restore this version"],
+  "Некорректная дата": ["Sana noto‘g‘ri", "Invalid date"],
+  "Некорректные изменения дат": ["Sanalardagi o‘zgarishlar noto‘g‘ri", "Invalid dated changes"],
+  "Изменения здесь применяются к недельному шаблону. Для одной даты создайте заявку.": [
+    "Bu yerdagi o‘zgarishlar haftalik jadvalga qo‘llanadi. Bitta sana uchun ariza yuboring.",
+    "Changes here apply to the weekly template. Submit a request for a single date."
+  ],
+  "На основе версии {version}": ["{version}-versiya asosida", "Based on version {version}"]
 }

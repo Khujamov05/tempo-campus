@@ -35,6 +35,19 @@ export interface Lesson {
   type: LessonType;
   frequency: Frequency;
   note: string;
+  templateId?: string;
+  originalDate?: string;
+  occurrenceDate?: string;
+}
+export interface LessonException {
+  lessonId: string;
+  originalDate: string;
+  date: string;
+  start: string;
+  end: string;
+  room: string;
+  cancelled: boolean;
+  reason: string;
 }
 export interface Data {
   version: 1;
@@ -42,6 +55,7 @@ export interface Data {
   teachers: Teacher[];
   groups: Group[];
   lessons: Lesson[];
+  exceptions?: LessonException[];
 }
 export const STORAGE_KEY = 'tempo-campus-v1';
 export const DAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
@@ -448,7 +462,129 @@ export function parseData(raw: string): Data {
     const error = validateLesson(lesson, data);
     if (error) throw new Error(`Ошибка в расписании: ${error}`);
   }
+  validateExceptions(data);
   return data;
+}
+
+export function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+export function parseDate(value: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('Некорректная дата');
+  const result = new Date(`${value}T12:00:00`);
+  if (!Number.isFinite(result.getTime()) || dateKey(result) !== value)
+    throw new Error('Некорректная дата');
+  return result;
+}
+export function campusToday(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tashkent',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+export function occursOn(lesson: Lesson, date: string): boolean {
+  const day = parseDate(date);
+  return (day.getDay() + 6) % 7 === lesson.day && activeInWeek(lesson, day);
+}
+export function lessonsOn(data: Data, date: string): Lesson[] {
+  const exceptions = data.exceptions ?? [];
+  const make = (lesson: Lesson, originalDate: string, patch?: LessonException): Lesson => ({
+    ...lesson,
+    ...(patch ? { start: patch.start, end: patch.end, room: patch.room } : {}),
+    id: `${lesson.id}@${originalDate}`,
+    templateId: lesson.id,
+    originalDate,
+    occurrenceDate: date,
+    day: (parseDate(date).getDay() + 6) % 7,
+  });
+  return [
+    ...data.lessons
+      .filter(
+        (l) =>
+          occursOn(l, date) &&
+          !exceptions.some((e) => e.lessonId === l.id && e.originalDate === date),
+      )
+      .map((l) => make(l, date)),
+    ...exceptions
+      .filter((e) => !e.cancelled && e.date === date)
+      .flatMap((e) => {
+        const lesson = data.lessons.find((l) => l.id === e.lessonId);
+        return lesson ? [make(lesson, e.originalDate, e)] : [];
+      }),
+  ];
+}
+export function lessonsInWeek(data: Data, week: Date): Lesson[] {
+  const start = monday(week);
+  return Array.from({ length: 6 }, (_, i) => lessonsOn(data, dateKey(addDays(start, i)))).flat();
+}
+export function exceptionConflicts(data: Data, change: LessonException): string[] {
+  const lesson = data.lessons.find((l) => l.id === change.lessonId);
+  if (!lesson || change.cancelled) return [];
+  const others = lessonsOn(data, change.date).filter(
+    (l) => !(l.templateId === change.lessonId && l.originalDate === change.originalDate),
+  );
+  const overlaps = others.filter(
+    (l) => minutes(l.start) < minutes(change.end) && minutes(change.start) < minutes(l.end),
+  );
+  return [
+    overlaps.some((l) => l.groupId === lesson.groupId) ? 'У группы уже есть занятие' : '',
+    overlaps.some((l) => l.room.trim().toLowerCase() === change.room.trim().toLowerCase())
+      ? 'Аудитория уже занята'
+      : '',
+    overlaps.some(
+      (l) =>
+        lessonTeacher(l, data)?.id &&
+        lessonTeacher(l, data)?.id === lessonTeacher(lesson, data)?.id,
+    )
+      ? 'Преподаватель уже занят'
+      : '',
+  ].filter(Boolean);
+}
+export function applyException(data: Data, change: LessonException): Data {
+  return {
+    ...data,
+    exceptions: [
+      ...(data.exceptions ?? []).filter(
+        (e) => e.lessonId !== change.lessonId || e.originalDate !== change.originalDate,
+      ),
+      change,
+    ],
+  };
+}
+function validateExceptions(data: Data): void {
+  if (data.exceptions === undefined) return;
+  if (!Array.isArray(data.exceptions) || data.exceptions.length > 2000)
+    throw new Error('Некорректные изменения дат');
+  const seen = new Set<string>();
+  for (const e of data.exceptions) {
+    if (
+      !e ||
+      typeof e.lessonId !== 'string' ||
+      typeof e.originalDate !== 'string' ||
+      typeof e.date !== 'string'
+    )
+      throw new Error('Некорректные изменения дат');
+    const lesson = data.lessons.find((l) => l.id === e.lessonId);
+    const key = `${e.lessonId}@${e.originalDate}`;
+    if (
+      !lesson ||
+      seen.has(key) ||
+      !occursOn(lesson, e.originalDate) ||
+      parseDate(e.date).getDay() === 0 ||
+      !isLessonPeriod(e) ||
+      !string(e.room, 60) ||
+      typeof e.cancelled !== 'boolean' ||
+      !string(e.reason, 1000)
+    )
+      throw new Error('Некорректные изменения дат');
+    seen.add(key);
+  }
+  for (const e of data.exceptions) {
+    const conflicts = exceptionConflicts(data, e);
+    if (conflicts.length) throw new Error(`Ошибка в расписании: ${conflicts.join('; ')}`);
+  }
 }
 
 export function migrateLegacy(data: Data): Data {
@@ -607,8 +743,10 @@ export function calendarExport(
     'CALSCALE:GREGORIAN',
     'X-WR-CALNAME:Tempo',
   ];
-  for (const lesson of lessons.filter((l) => activeInWeek(l, week))) {
-    const day = addDays(week, lesson.day);
+  for (const lesson of lessons.filter((l) => l.occurrenceDate || activeInWeek(l, week))) {
+    const day = lesson.occurrenceDate
+      ? parseDate(lesson.occurrenceDate)
+      : addDays(week, lesson.day);
     const subject = data.subjects.find((s) => s.id === lesson.subjectId)!;
     const teacher = lessonTeacher(lesson, data);
     lines.push(

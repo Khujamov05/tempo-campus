@@ -1,22 +1,25 @@
 # Tempo: accounts and shared schedule
 
 The published application uses Supabase Auth and PostgreSQL. The schema in
-`migrations/202610300001_accounts.sql` has been applied to the Tempo project.
+`migrations/202610300001_accounts.sql` and `migrations/202611060001_workflow.sql`
+have been applied to the Tempo project.
 
 ## Roles
 
 - Student: reads the entire schedule of a selected group.
 - Teacher: initially sees their own lessons across all groups; can switch to a group.
-  Each lesson's assigned teacher determines ownership.
-- Administrator: edits and publishes the shared schedule, assigns account roles.
+  Each lesson's assigned teacher determines ownership. Teachers submit requests
+  for their own dated occurrences and may withdraw pending requests.
+- Administrator: edits and publishes the shared schedule, reviews requests,
+  restores publication snapshots and assigns account roles.
 
 All authenticated accounts can read the shared schedule. Teacher filtering is a
 presentation preference, not a restriction on reading other teachers' lessons.
 Anonymous reads and direct client writes are denied. Only checked RPC functions
 can save the schedule or assign roles. A client cannot promote itself through
 profile writes or user metadata. Concurrent saves use a revision to avoid losing
-another administrator's changes. Users must sign out and back in after a role change
-to refresh the interface; database permissions are checked on every request.
+another administrator's changes. The client refreshes role and schedule every 20 seconds while visible and on
+returning to the tab; database permissions are checked on every request.
 
 ## Adding accounts
 
@@ -26,7 +29,7 @@ start as students. Use real, accessible email addresses for real users; configur
 SMTP and recovery flows before relying on email invitations or password resets.
 
 An administrator opens **Управление ролями / Rollarni boshqarish**, finds the
-account by its UUID (shown in the user's profile), chooses a role and, for a teacher,
+account by teacher name or email, chooses a role and, for a teacher,
 links it to an existing teacher. A student can be assigned a default group.
 An administrator cannot change their own role through this form.
 
@@ -38,7 +41,7 @@ published site. Replace these with individual accounts for actual use.
 
 ## New project setup
 
-1. Apply the SQL migration to a new Supabase project, once.
+1. Apply both SQL migrations in filename order to a new Supabase project, once.
 2. Set the public URL and publishable key from `.env.example`. Never put a secret
    or service-role key in a `VITE_` variable or frontend source.
 3. Create the initial owner account through Supabase Auth; assign its profile the
@@ -63,3 +66,34 @@ Unit tests cover teacher/student defaults and filtering. Actual hosted API check
 verified login/profile/read for all three roles, rejection of anonymous reads,
 rejection of teacher/student saves and self-promotion, administrator saves, and
 stale-revision conflicts. These checks complement the browser UI checks.
+
+## Dated changes and publication history
+
+The workflow migration is additive and validates the existing timetable before
+committing. Take a JSON backup first. Existing payloads without an exceptions
+array remain valid. The installation records the current revision as a baseline;
+it cannot reconstruct older revisions.
+
+Only the request author and administrators can read a request, including its
+reason and review comment. Students can read publication metadata, but cannot
+read request rows, account emails or full historical snapshots. Timetables are
+shared with all authenticated accounts; approved dated changes become part of
+that shared payload. Do not include confidential information in timetable notes
+or reasons.
+
+All writes use checked, security-definer RPCs with an empty search_path and an
+explicit execution allowlist. Server validation covers references, collection
+sizes, time formats, weekly/dated clashes and linked accounts. Approval locks
+both schedule and request, detects stale baselines, publishes the change and
+records history in the same transaction. Failed approval leaves the request
+pending and the timetable intact. Restore creates a new revision, validating
+against current linked accounts. Direct table writes remain denied.
+
+The UI lists the latest 200 requests and 50 publications. Older database rows
+are retained; there is no automatic retention policy or semester archiving yet.
+Notifications are in-app polling, not push notifications. Administrator drafts
+remain in memory: export JSON before closing or reloading a dirty tab.
+
+Automated tests execute both actual migrations against PGlite PostgreSQL,
+including student/teacher denials, ownership, RLS visibility, invalid saves,
+conflict atomicity, stale requests, withdrawal and version restoration.

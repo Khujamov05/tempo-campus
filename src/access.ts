@@ -1,4 +1,4 @@
-import { activeInWeek, lessonTeacher, type Data } from './model';
+import { lessonsInWeek, lessonTeacher, type Data } from './model';
 
 export type Role = 'student' | 'teacher' | 'admin';
 export interface Profile {
@@ -6,6 +6,8 @@ export interface Profile {
   role: Role;
   teacher_id: string | null;
   group_id: string | null;
+  display_name?: string;
+  email?: string;
 }
 
 /** Presentation defaults only. Database policies enforce write permissions. */
@@ -20,8 +22,7 @@ export function accountLessons(
   scope: 'mine' | 'group',
   groupId: string,
 ) {
-  return data.lessons.filter((lesson) => {
-    if (!activeInWeek(lesson, week)) return false;
+  return lessonsInWeek(data, week).filter((lesson) => {
     if (profile.role === 'teacher' && scope === 'mine') {
       return !!profile.teacher_id && lessonTeacher(lesson, data)?.id === profile.teacher_id;
     }

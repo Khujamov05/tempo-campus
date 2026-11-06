@@ -27,6 +27,8 @@ import {
   Upload,
   UsersRound,
   X,
+  GitPullRequest,
+  History,
 } from 'lucide-react';
 import {
   DAYS,
@@ -49,6 +51,8 @@ import {
   minutes,
   monday,
   parseData,
+  lessonsOn,
+  campusToday,
   shortName,
   subjectTeachers,
   lessonTeacher,
@@ -57,6 +61,7 @@ import {
   type Data,
   type Frequency,
   type Lesson,
+  type LessonException,
   type LessonType,
   type Subject,
   type Teacher,
@@ -66,7 +71,7 @@ import {
 import { useI18n, languageNames, type Language } from './i18n';
 import { accountLessons, defaultScope, type Profile } from './access';
 
-type Page = 'schedule' | 'subjects' | 'teachers' | 'settings';
+type Page = 'schedule' | 'subjects' | 'teachers' | 'settings' | 'requests' | 'history' | 'today';
 type ModalState =
   | { type: 'lesson'; lesson?: Lesson; slot?: Pick<Lesson, 'day' | 'start' | 'end'> }
   | { type: 'subject' }
@@ -81,9 +86,12 @@ const PAGES: Record<Page, string> = {
   subjects: 'Предметы',
   teachers: 'Преподаватели',
   settings: 'Настройки',
+  requests: 'Заявки на изменения',
+  history: 'История изменений',
+  today: 'Сегодня',
 };
 
-function Modal({
+export function Modal({
   title,
   subtitle,
   children,
@@ -197,7 +205,9 @@ function LessonForm({
   return (
     <Modal
       title={lesson ? t('Детали занятия') : t('Новое занятие')}
-      subtitle={t('Немного порядка для продуктивной недели.')}
+      subtitle={t(
+        'Изменения здесь применяются к недельному шаблону. Для одной даты создайте заявку.',
+      )}
       onClose={onClose}
     >
       <form onSubmit={submit} className="form">
@@ -617,6 +627,8 @@ export default function App({
     publish: (data: Data) => Promise<void>;
     accountBar: ReactNode;
     onDirty: (dirty: boolean) => void;
+    revision: number;
+    workflow: (view: 'requests' | 'history') => ReactNode;
   };
 }) {
   const { t, language, setLanguage, plural, dateLabel } = useI18n();
@@ -630,7 +642,7 @@ export default function App({
   const [publishing, setPublishing] = useState(false);
   useEffect(() => {
     cloud?.onDirty(dirty);
-  }, [dirty, cloud?.onDirty]);
+  }, [dirty]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => {
@@ -640,6 +652,9 @@ export default function App({
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
   const [data, setData] = useState(initial.data);
+  useEffect(() => {
+    if (cloud && !dirty) setData(cloud.data);
+  }, [cloud?.data, dirty]);
   const [warning, setWarning] = useState(initial.warning);
   const [page, setPage] = useState<Page>('schedule');
   const [week, setWeek] = useState(() => monday(new Date()));
@@ -655,12 +670,19 @@ export default function App({
       if (next.type === 'lesson' && next.lesson) updateModal(next);
       return;
     }
-    if (!publishing) updateModal(next);
+    if (!publishing) {
+      if (canEdit && next?.type === 'lesson' && next.lesson?.templateId) {
+        updateModal({
+          ...next,
+          lesson: data.lessons.find((l) => l.id === next.lesson?.templateId),
+        });
+      } else updateModal(next);
+    }
   }
   const [toast, setToast] = useState('');
   const [mobileNav, setMobileNav] = useState(false);
   const [clock, setClock] = useState(() => new Date());
-  const [undo, setUndo] = useState<Lesson | null>(null);
+  const [undo, setUndo] = useState<{ lesson: Lesson; exceptions: LessonException[] } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const interval = setInterval(() => setClock(new Date()), 60_000);
@@ -704,20 +726,32 @@ export default function App({
   }
   function saveLesson(lesson: Lesson) {
     const exists = data.lessons.some((l) => l.id === lesson.id);
-    persist({
+    const next = {
       ...data,
       lessons: exists
         ? data.lessons.map((l) => (l.id === lesson.id ? lesson : l))
         : [...data.lessons, lesson],
-    });
+    };
+    try {
+      parseData(JSON.stringify(next));
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Ошибка в расписании');
+      return;
+    }
+    persist(next);
     setModal(null);
     notify(exists ? 'Изменения сохранены' : 'Занятие добавлено в расписание');
   }
   function deleteLesson(id: string) {
     const removed = data.lessons.find((l) => l.id === id)!;
-    persist({ ...data, lessons: data.lessons.filter((l) => l.id !== id) });
+    const exceptions = data.exceptions?.filter((e) => e.lessonId === id) ?? [];
+    persist({
+      ...data,
+      lessons: data.lessons.filter((l) => l.id !== id),
+      exceptions: data.exceptions?.filter((e) => e.lessonId !== id),
+    });
     setModal(null);
-    setUndo(removed);
+    setUndo({ lesson: removed, exceptions });
     setToast('Занятие удалено');
   }
   const group = data.groups.find((g) => g.id === groupId) ?? data.groups[0];
@@ -802,6 +836,24 @@ export default function App({
         </div>
         <div className="nav-caption">{t('ОРГАНИЗУЙ СВОЙ ДЕНЬ')}</div>
         <nav aria-label={t('Основная навигация')}>
+          {cloud &&
+            [
+              { id: 'today' as const, label: 'Сегодня', icon: Clock3 },
+              ...(cloud.profile.role !== 'student'
+                ? [{ id: 'requests' as const, label: 'Заявки на изменения', icon: GitPullRequest }]
+                : []),
+              { id: 'history' as const, label: 'История изменений', icon: History },
+            ].map((item) => (
+              <button
+                key={item.id}
+                className={`nav-item ${page === item.id ? 'active' : ''}`}
+                aria-current={page === item.id ? 'page' : undefined}
+                onClick={() => navigate(item.id)}
+              >
+                <item.icon size={19} />
+                <span>{t(item.label)}</span>
+              </button>
+            ))}
           {(
             [
               { id: 'schedule', icon: CalendarDays },
@@ -958,7 +1010,83 @@ export default function App({
               {t(warning)}
             </div>
           )}
-          <section className="page-heading">
+          {cloud && (page === 'requests' || page === 'history') && cloud.workflow(page)}
+          {page === 'today' && (
+            <section className="today-view">
+              <span className="eyebrow">{t('ВАШ ДЕНЬ')}</span>
+              <h1>{t('Сегодня')}</h1>
+              <p>
+                {campusToday()} ·{' '}
+                {cloud?.profile.role === 'teacher' ? t('Мои занятия — все группы') : group.name}
+              </p>
+              {cloud?.profile.role !== 'teacher' && (
+                <label>
+                  {t('Группа')}
+                  <select value={group.id} onChange={(e) => setGroupId(e.target.value)}>
+                    {data.groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {(() => {
+                const today = lessonsOn(data, campusToday())
+                  .filter((l) =>
+                    cloud?.profile.role === 'teacher'
+                      ? lessonTeacher(l, data)?.id === cloud.profile.teacher_id
+                      : l.groupId === group.id,
+                  )
+                  .sort((a, b) => a.start.localeCompare(b.start));
+                const now = new Intl.DateTimeFormat('en-GB', {
+                  timeZone: 'Asia/Tashkent',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hourCycle: 'h23',
+                }).format(clock);
+                return today.length ? (
+                  today.map((l) => (
+                    <article
+                      key={l.id}
+                      className={`today-lesson ${l.start <= now && l.end > now ? 'current' : ''}`}
+                    >
+                      <div className="today-time">
+                        <strong>{l.start}</strong>
+                        <span>{l.end}</span>
+                      </div>
+                      <div>
+                        <small>
+                          {l.end <= now
+                            ? t('Завершено')
+                            : l.start <= now
+                              ? t('Сейчас')
+                              : t('Через {minutes} мин', {
+                                  minutes: minutes(l.start) - minutes(now),
+                                })}
+                        </small>
+                        <h2>{data.subjects.find((s) => s.id === l.subjectId)?.name}</h2>
+                        <p>
+                          {data.groups.find((g) => g.id === l.groupId)?.name} · {t('Аудитория')}{' '}
+                          {l.room}
+                        </p>
+                        <span>{lessonTeacher(l, data)?.name}</span>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="workflow-card">
+                    <Coffee />
+                    <p>{t('На сегодня занятий нет.')}</p>
+                  </div>
+                );
+              })()}
+            </section>
+          )}
+          <section
+            className="page-heading"
+            hidden={['requests', 'history', 'today'].includes(page)}
+          >
             <div>
               <div className="eyebrow">
                 <span className="tiny-dot" />{' '}
@@ -1794,12 +1922,18 @@ export default function App({
           {undo && (
             <button
               onClick={() => {
-                const error = validateLesson(undo, data);
-                if (error) {
-                  notify(error);
+                const next = {
+                  ...data,
+                  lessons: [...data.lessons, undo.lesson],
+                  exceptions: [...(data.exceptions ?? []), ...undo.exceptions],
+                };
+                try {
+                  parseData(JSON.stringify(next));
+                } catch (error) {
+                  notify(error instanceof Error ? error.message : 'Ошибка в расписании');
                   return;
                 }
-                persist({ ...data, lessons: [...data.lessons, undo] });
+                persist(next);
                 notify('Занятие восстановлено');
               }}
             >

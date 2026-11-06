@@ -4,6 +4,7 @@ import App from './App';
 import { supabase } from './supabase';
 import { parseData, type Data } from './model';
 import { type Profile } from './access';
+import Workflow, { UpdateDescription, workflowError, type ScheduleUpdate } from './Workflow';
 import { useI18n, languageNames, type Language } from './i18n';
 
 export default function CloudApp() {
@@ -13,6 +14,12 @@ export default function CloudApp() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [schedule, setSchedule] = useState<Data | null>(null);
   const revision = useRef(0);
+  const [revisionNumber, setRevisionNumber] = useState(0);
+  const [incoming, setIncoming] = useState(false);
+  const [updates, setUpdates] = useState<ScheduleUpdate[]>([]);
+  const [updated, setUpdated] = useState(false);
+  const dirtyRef = useRef(false);
+  const [userSearch, setUserSearch] = useState('');
   const generation = useRef(0);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -32,35 +39,71 @@ export default function CloudApp() {
   }, []);
 
   const userId = session?.user.id;
+  async function reload() {
+    if (!userId || !supabase) return;
+    const token = generation.current;
+    const [p, s, news] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('campus_schedule').select('payload,revision').eq('id', 1).single(),
+      supabase.rpc('list_schedule_updates'),
+    ]);
+    if (token !== generation.current) return;
+    if (p.error || s.error) throw new Error(t('Не удалось загрузить общее расписание.'));
+    setProfile(p.data as Profile);
+    if (!news.error) setUpdates(news.data as ScheduleUpdate[]);
+    if (revision.current === Number(s.data.revision)) return;
+    if (dirtyRef.current) {
+      setIncoming(true);
+      return;
+    }
+    const validated = parseData(JSON.stringify(s.data.payload));
+    if (revision.current) setUpdated(true);
+    revision.current = Number(s.data.revision);
+    setRevisionNumber(revision.current);
+    setSchedule(validated);
+    setIncoming(false);
+  }
   useEffect(() => {
-    const token = ++generation.current;
+    ++generation.current;
+    revision.current = 0;
+    dirtyRef.current = false;
     setProfile(null);
     setSchedule(null);
     setUsers(null);
     setError('');
     setMessage('');
     setDirty(false);
+    setIncoming(false);
+    setUpdated(false);
+    setUpdates([]);
     if (!userId || !supabase) return;
-    void Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('campus_schedule').select('payload,revision').eq('id', 1).single(),
-    ])
-      .then(([p, s]) => {
-        if (token !== generation.current) return;
-        if (p.error || s.error) throw new Error(t('Не удалось загрузить общее расписание.'));
-        const validated = parseData(JSON.stringify(s.data.payload));
-        setProfile(p.data as Profile);
-        revision.current = s.data.revision;
-        setSchedule(validated);
-      })
-      .catch((e: unknown) => {
-        if (token === generation.current)
-          setError(e instanceof Error ? e.message : t('Ошибка подключения'));
-      });
-    return () => {
-      generation.current++;
+    let loading = false;
+    const refresh = async () => {
+      if (loading || document.hidden) return;
+      loading = true;
+      try {
+        await reload();
+      } catch {
+        setError(t('Не удалось загрузить общее расписание.'));
+      } finally {
+        loading = false;
+      }
     };
-  }, [userId]); // Profile and data are reset whenever the account changes.
+    void refresh();
+    const interval = setInterval(refresh, 20000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      ++generation.current;
+      clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [userId]);
+  function trackDirty(value: boolean) {
+    dirtyRef.current = value;
+    setDirty(value);
+  }
 
   async function authenticate(event: FormEvent) {
     event.preventDefault();
@@ -99,16 +142,18 @@ export default function CloudApp() {
       throw new Error(
         e.code === 'P0001'
           ? t('Расписание изменилось. Сохраните копию своих правок и обновите страницу.')
-          : e.message,
+          : t(workflowError(e)),
       );
     revision.current = Number(data);
+    setRevisionNumber(revision.current);
+    setIncoming(false);
     setSchedule(next);
   }
 
   async function loadUsers() {
     if (!supabase || profile?.role !== 'admin') return;
     setError('');
-    const result = await supabase.from('profiles').select('*').order('id');
+    const result = await supabase.rpc('list_tempo_accounts');
     if (result.error) setError(result.error.message);
     else setUsers(result.data as Profile[]);
   }
@@ -227,7 +272,6 @@ export default function CloudApp() {
           )}
         </strong>
         <span>{session.user.email}</span>
-        <small>ID: {profile.id}</small>
       </div>
       <div className="account-actions">
         {profile.role === 'admin' && (
@@ -244,52 +288,86 @@ export default function CloudApp() {
           {error}
         </p>
       )}
+      {incoming && (
+        <p className="warning" role="status">
+          {t(
+            'Есть новая опубликованная версия. Сохраните копию черновика перед обновлением страницы.',
+          )}
+        </p>
+      )}
+      {updated && !incoming && (
+        <div className="schedule-update" role="status">
+          <div>
+            <strong>{t('Расписание обновилось автоматически')}</strong>
+            {updates[0] && schedule && <UpdateDescription update={updates[0]} data={schedule} />}
+          </div>
+          <button className="text-button" onClick={() => setUpdated(false)}>
+            {t('Понятно')}
+          </button>
+        </div>
+      )}
       {users && (
         <section className="roles-panel">
           <h2>{t('Управление ролями')}</h2>
           <p>
-            {t(
-              'Пользователь сообщает свой ID из профиля. Изменения роли применятся после повторного входа.',
-            )}
+            {t('Найдите пользователя по имени или email. Изменения роли применятся автоматически.')}
           </p>
-          {users.map((u) => (
-            <form key={u.id} onSubmit={(e) => assign(e, u.id)}>
-              <small>{u.id}</small>
-              <label>
-                {t('Роль')}
-                <select name="role" defaultValue={u.role} disabled={u.id === profile.id}>
-                  <option value="student">{t('Студент')}</option>
-                  <option value="teacher">{t('Преподаватель')}</option>
-                  <option value="admin">{t('Администратор')}</option>
-                </select>
-              </label>
-              <label>
-                {t('Преподаватель')}
-                <select name="teacher" defaultValue={u.teacher_id || ''}>
-                  <option value="">—</option>
-                  {schedule.teachers.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t('Группа')}
-                <select name="group" defaultValue={u.group_id || ''}>
-                  <option value="">—</option>
-                  {schedule.groups.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button className="button primary" disabled={busy || u.id === profile.id}>
-                {t('Сохранить')}
-              </button>
-            </form>
-          ))}
+          <label>
+            {t('Найти пользователя')}
+            <input
+              type="search"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
+          </label>
+          {users
+            .filter((u) =>
+              [u.display_name, u.email, u.id]
+                .join(' ')
+                .toLocaleLowerCase()
+                .includes(userSearch.toLocaleLowerCase()),
+            )
+            .map((u) => (
+              <form key={u.id} onSubmit={(e) => assign(e, u.id)}>
+                <div>
+                  <strong>{u.display_name || u.id}</strong>
+                  <small>{u.email}</small>
+                </div>
+                <label>
+                  {t('Роль')}
+                  <select name="role" defaultValue={u.role} disabled={u.id === profile.id}>
+                    <option value="student">{t('Студент')}</option>
+                    <option value="teacher">{t('Преподаватель')}</option>
+                    <option value="admin">{t('Администратор')}</option>
+                  </select>
+                </label>
+                <label>
+                  {t('Преподаватель')}
+                  <select name="teacher" defaultValue={u.teacher_id || ''}>
+                    <option value="">—</option>
+                    {schedule.teachers.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  {t('Группа')}
+                  <select name="group" defaultValue={u.group_id || ''}>
+                    <option value="">—</option>
+                    {schedule.groups.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button className="button primary" disabled={busy || u.id === profile.id}>
+                  {t('Сохранить')}
+                </button>
+              </form>
+            ))}
           {message && <p role="status">{message}</p>}
           <button className="text-button" onClick={() => setUsers(null)}>
             {t('Закрыть')}
@@ -300,8 +378,25 @@ export default function CloudApp() {
   );
   return (
     <App
-      key={profile.id}
-      cloud={{ data: schedule, profile, publish, accountBar, onDirty: setDirty }}
+      key={profile.id + profile.role + profile.teacher_id}
+      cloud={{
+        data: schedule,
+        profile,
+        publish,
+        accountBar,
+        onDirty: trackDirty,
+        revision: revisionNumber,
+        workflow: (view) => (
+          <Workflow
+            view={view}
+            data={schedule}
+            profile={profile}
+            revision={revisionNumber}
+            dirty={dirty}
+            onChanged={reload}
+          />
+        ),
+      }}
     />
   );
 }

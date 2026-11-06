@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import source from './App.tsx?raw';
+import appSource from './App.tsx?raw';
+import cloudSource from './CloudApp.tsx?raw';
+import workflowSource from './Workflow.tsx?raw';
 import { formatDate, loadLanguage, translate, translateMessage } from './i18n-core';
 import translations from './translations.json';
 import { DAYS, SHORT_DAYS, TYPES, FREQUENCIES } from './model';
@@ -22,7 +24,9 @@ describe('languages', () => {
     expect(loadLanguage()).toBe('uz');
   });
   it('has Uzbek and English translations for every static interface key', () => {
-    const keys = [...source.matchAll(/\bt\('([^']+)'/g)].map((match) => match[1]);
+    const keys = [
+      ...[appSource, cloudSource, workflowSource].join('\n').matchAll(/\bt\(\s*'([^']+)'/g),
+    ].map((match) => match[1]);
     for (const key of [...keys, ...DAYS, ...SHORT_DAYS, ...TYPES, ...Object.values(FREQUENCIES)]) {
       expect(Object.hasOwn(translations, key), key).toBe(true);
       expect(translate('en', key), key).not.toMatch(/[А-Яа-яЁё]/);

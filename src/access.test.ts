@@ -24,7 +24,10 @@ describe('account schedule defaults', () => {
     data.subjects[0].teacherId = 't1';
     data.lessons = [lesson('a', 'g1'), lesson('b', 'g2', 't1'), lesson('c', 'g1', 't2')];
     expect(defaultScope(teacher)).toBe('mine');
-    expect(accountLessons(data, teacher, week, 'mine', 'g1').map((x) => x.id)).toEqual(['a', 'b']);
+    expect(accountLessons(data, teacher, week, 'mine', 'g1').map((x) => x.templateId)).toEqual([
+      'a',
+      'b',
+    ]);
   });
   it('does not show everybody as own lessons when the teacher is not linked', () => {
     expect(
@@ -37,7 +40,10 @@ describe('account schedule defaults', () => {
     data.lessons.push({ ...lesson('d', 'g1'), frequency: 'even' });
     const student: Profile = { ...teacher, role: 'student', teacher_id: null, group_id: 'g1' };
     expect(defaultScope(student)).toBe('group');
-    expect(accountLessons(data, student, week, 'group', 'g1').map((x) => x.id)).toEqual(['a', 'b']);
+    expect(accountLessons(data, student, week, 'group', 'g1').map((x) => x.templateId)).toEqual([
+      'a',
+      'b',
+    ]);
   });
   it('only administrators can manage the shared schedule', () => {
     expect(canManageSchedule(null)).toBe(false);
