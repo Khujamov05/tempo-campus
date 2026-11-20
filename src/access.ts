@@ -1,4 +1,4 @@
-import { lessonsInWeek, lessonTeacher, type Data } from './model';
+import { lessonsInWeek, teachersOf, groupsOf, type Data } from './model';
 
 export type Role = 'student' | 'teacher' | 'admin';
 export interface Profile {
@@ -24,9 +24,9 @@ export function accountLessons(
 ) {
   return lessonsInWeek(data, week).filter((lesson) => {
     if (profile.role === 'teacher' && scope === 'mine') {
-      return !!profile.teacher_id && lessonTeacher(lesson, data)?.id === profile.teacher_id;
+      return !!profile.teacher_id && teachersOf(lesson, data).includes(profile.teacher_id);
     }
-    return lesson.groupId === groupId;
+    return groupsOf(lesson).includes(groupId);
   });
 }
 

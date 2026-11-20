@@ -1,3 +1,4 @@
+import CampusRooms from './CampusRooms';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowDownToLine,
@@ -56,6 +57,10 @@ import {
   shortName,
   subjectTeachers,
   lessonTeacher,
+  groupsOf,
+  teachersOf,
+  groupNames,
+  teacherNames,
   uid,
   validateLesson,
   type Data,
@@ -71,7 +76,8 @@ import {
 import { useI18n, languageNames, type Language } from './i18n';
 import { accountLessons, defaultScope, type Profile } from './access';
 
-type Page = 'schedule' | 'subjects' | 'teachers' | 'settings' | 'requests' | 'history' | 'today';
+type Page =
+  'schedule' | 'subjects' | 'teachers' | 'settings' | 'requests' | 'history' | 'today' | 'campus';
 type ModalState =
   | { type: 'lesson'; lesson?: Lesson; slot?: Pick<Lesson, 'day' | 'start' | 'end'> }
   | { type: 'subject' }
@@ -89,6 +95,7 @@ const PAGES: Record<Page, string> = {
   requests: 'Заявки на изменения',
   history: 'История изменений',
   today: 'Сегодня',
+  campus: 'Аудитории',
 };
 
 export function Modal({
@@ -277,6 +284,58 @@ function LessonForm({
             </select>
           </label>
         </div>
+        <details>
+          <summary>{t('Участники и оборудование')}</summary>
+          {(['extraGroups', 'assistants'] as const).map((key) => (
+            <fieldset key={key}>
+              <legend>
+                {t(key === 'extraGroups' ? 'Дополнительные группы' : 'Совместно ведут')}
+              </legend>
+              {(key === 'extraGroups' ? data.groups : data.teachers)
+                .filter(
+                  (x) =>
+                    x.id !==
+                    (key === 'extraGroups' ? draft.groupId : lessonTeacher(draft, data)?.id),
+                )
+                .map((x) => (
+                  <label key={x.id}>
+                    <input
+                      type="checkbox"
+                      checked={draft[key]?.includes(x.id) ?? false}
+                      onChange={(e) =>
+                        set(
+                          key,
+                          e.target.checked
+                            ? [...(draft[key] ?? []), x.id]
+                            : draft[key]?.filter((id) => id !== x.id),
+                        )
+                      }
+                    />
+                    {x.name}
+                  </label>
+                ))}
+            </fieldset>
+          ))}
+          {(['seats', 'computers'] as const).map((key) => (
+            <label key={key}>
+              {t(key === 'seats' ? 'Число студентов' : 'Требуется компьютеров')}
+              <input
+                type="number"
+                min="0"
+                value={draft[key] ?? ''}
+                onChange={(e) => set(key, Number(e.target.value))}
+              />
+            </label>
+          ))}
+          <label>
+            <input
+              type="checkbox"
+              checked={!!draft.screen}
+              onChange={(e) => set('screen', e.target.checked)}
+            />
+            {t('Нужен экран')}
+          </label>
+        </details>
         <fieldset className="period-picker" aria-describedby="period-hint">
           <legend>{t('Время пары')}</legend>
           <p id="period-hint" className="period-hint">
@@ -755,9 +814,19 @@ export default function App({
     setToast('Занятие удалено');
   }
   const group = data.groups.find((g) => g.id === groupId) ?? data.groups[0];
+  const [mineGroup, setMineGroup] = useState('');
+  const mine = cloud?.profile.role === 'teacher' && scope === 'mine';
+  const assignedGroups = data.groups.filter((g) =>
+    data.lessons.some(
+      (l) =>
+        groupsOf(l).includes(g.id) && teachersOf(l, data).includes(cloud?.profile.teacher_id ?? ''),
+    ),
+  );
   const weekLessons = cloud
-    ? accountLessons(data, cloud.profile, week, scope, group.id)
-    : data.lessons.filter((l) => l.groupId === group.id && activeInWeek(l, week));
+    ? accountLessons(data, cloud.profile, week, scope, group.id).filter(
+        (l) => !mine || !mineGroup || groupsOf(l).includes(mineGroup),
+      )
+    : data.lessons.filter((l) => groupsOf(l).includes(group.id) && activeInWeek(l, week));
   const search = query.trim().toLocaleLowerCase();
   const hasScheduleFilters = subjectFilter !== 'all' || teacherFilter !== '' || filter !== 'all';
   const visible = weekLessons
@@ -765,7 +834,7 @@ export default function App({
       (l) =>
         (filter === 'all' || l.type === filter) &&
         (subjectFilter === 'all' || l.subjectId === subjectFilter) &&
-        (!teacherFilter || lessonTeacher(l, data)?.id === teacherFilter),
+        (!teacherFilter || teachersOf(l, data).includes(teacherFilter)),
     )
     .sort((a, b) => a.day - b.day || minutes(a.start) - minutes(b.start));
   const totalMinutes = weekLessons.reduce((sum, l) => sum + minutes(l.end) - minutes(l.start), 0);
@@ -818,9 +887,6 @@ export default function App({
             navigate('schedule');
           }}
         >
-          <span className="brand-mark">
-            t<span>•</span>
-          </span>
           <span>
             tempo<span className="brand-period">.</span>
           </span>
@@ -857,6 +923,7 @@ export default function App({
           {(
             [
               { id: 'schedule', icon: CalendarDays },
+              { id: 'campus', icon: MapPin },
               { id: 'subjects', icon: BookOpen },
               { id: 'teachers', icon: UsersRound },
             ] as const
@@ -1011,6 +1078,7 @@ export default function App({
             </div>
           )}
           {cloud && (page === 'requests' || page === 'history') && cloud.workflow(page)}
+          {page === 'campus' && <CampusRooms data={data} editable={canEdit} save={persist} />}
           {page === 'today' && (
             <section className="today-view">
               <span className="eyebrow">{t('ВАШ ДЕНЬ')}</span>
@@ -1035,8 +1103,9 @@ export default function App({
                 const today = lessonsOn(data, campusToday())
                   .filter((l) =>
                     cloud?.profile.role === 'teacher'
-                      ? lessonTeacher(l, data)?.id === cloud.profile.teacher_id
-                      : l.groupId === group.id,
+                      ? teachersOf(l, data).includes(cloud.profile.teacher_id ?? '') &&
+                        (!mineGroup || groupsOf(l).includes(mineGroup))
+                      : groupsOf(l).includes(group.id),
                   )
                   .sort((a, b) => a.start.localeCompare(b.start));
                 const now = new Intl.DateTimeFormat('en-GB', {
@@ -1067,10 +1136,9 @@ export default function App({
                         </small>
                         <h2>{data.subjects.find((s) => s.id === l.subjectId)?.name}</h2>
                         <p>
-                          {data.groups.find((g) => g.id === l.groupId)?.name} · {t('Аудитория')}{' '}
-                          {l.room}
+                          {groupNames(l, data)} · {t('Аудитория')} {l.room}
                         </p>
-                        <span>{lessonTeacher(l, data)?.name}</span>
+                        <span>{teacherNames(l, data)}</span>
                       </div>
                     </article>
                   ))
@@ -1085,7 +1153,7 @@ export default function App({
           )}
           <section
             className="page-heading"
-            hidden={['requests', 'history', 'today'].includes(page)}
+            hidden={['requests', 'history', 'today', 'campus'].includes(page)}
           >
             <div>
               <div className="eyebrow">
@@ -1247,11 +1315,13 @@ export default function App({
                       <UsersRound size={16} />
                       <select
                         aria-label={t('Учебная группа')}
-                        value={group.id}
-                        disabled={cloud?.profile.role === 'teacher' && scope === 'mine'}
-                        onChange={(e) => setGroupId(e.target.value)}
+                        value={mine ? mineGroup : group.id}
+                        onChange={(e) =>
+                          mine ? setMineGroup(e.target.value) : setGroupId(e.target.value)
+                        }
                       >
-                        {data.groups.map((g) => (
+                        {mine && <option value="">{t('Все группы')}</option>}
+                        {(mine ? assignedGroups : data.groups).map((g) => (
                           <option key={g.id} value={g.id}>
                             {g.name}
                           </option>
@@ -1403,9 +1473,7 @@ export default function App({
                                         )!}
                                         teacher={lessonTeacher(lesson, data)}
                                         groupName={
-                                          scope === 'mine'
-                                            ? data.groups.find((g) => g.id === lesson.groupId)?.name
-                                            : undefined
+                                          scope === 'mine' ? groupNames(lesson, data) : undefined
                                         }
                                         compact
                                         onClick={() => setModal({ type: 'lesson', lesson })}
@@ -1475,9 +1543,7 @@ export default function App({
                                     subject={subject}
                                     teacher={lessonTeacher(lesson, data)}
                                     groupName={
-                                      scope === 'mine'
-                                        ? data.groups.find((g) => g.id === lesson.groupId)?.name
-                                        : undefined
+                                      scope === 'mine' ? groupNames(lesson, data) : undefined
                                     }
                                     onClick={() => setModal({ type: 'lesson', lesson })}
                                   />
@@ -1562,7 +1628,7 @@ export default function App({
                         const count = data.lessons.filter(
                           (l) =>
                             l.subjectId === subject.id &&
-                            l.groupId === group.id &&
+                            groupsOf(l).includes(group.id) &&
                             activeInWeek(l, week),
                         ).length;
                         return (
@@ -1789,9 +1855,9 @@ export default function App({
           }
           onClose={() => setModal(null)}
         >
-          <p>{lessonTeacher(modal.lesson, data)?.name}</p>
+          <p>{teacherNames(modal.lesson, data)}</p>
           <p>
-            {data.groups.find((g) => g.id === modal.lesson?.groupId)?.name} · {modal.lesson.room}
+            {groupNames(modal.lesson, data)} · {modal.lesson.room}
           </p>
           <p>
             {modal.lesson.start}–{modal.lesson.end} · {t(modal.lesson.type)}

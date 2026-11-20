@@ -11,7 +11,9 @@ import {
   campusToday,
   parseDate,
   lessonsOn,
-  lessonTeacher,
+  teacherNames,
+  groupNames,
+  teachersOf,
   exceptionConflicts,
   download,
   type Data,
@@ -196,7 +198,7 @@ export default function Workflow({
   }
   const candidates = validDate(sourceDate)
     ? lessonsOn(data, sourceDate).filter(
-        (l) => admin || lessonTeacher(l, data)?.id === profile.teacher_id,
+        (l) => admin || teachersOf(l, data).includes(profile.teacher_id ?? ''),
       )
     : [];
   const occurrence = candidates.find((l) => l.id === occurrenceId);
@@ -338,7 +340,7 @@ export default function Workflow({
                 {candidates.map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.start} · {data.subjects.find((s) => s.id === l.subjectId)?.name} ·{' '}
-                    {data.groups.find((g) => g.id === l.groupId)?.name}
+                    {groupNames(l, data)}
                   </option>
                 ))}
               </select>
@@ -701,12 +703,10 @@ export default function Workflow({
                 <tbody>
                   {snapshot.payload.lessons.map((l) => (
                     <tr key={l.id}>
-                      <td>{snapshot.payload.groups.find((g) => g.id === l.groupId)?.name}</td>
+                      <td>{groupNames(l, snapshot.payload)}</td>
                       <td>{snapshot.payload.subjects.find((s) => s.id === l.subjectId)?.name}</td>
                       <td>{t(DAYS[l.day])}</td>
-                      <td>
-                        {lessonTeacher(l, snapshot.payload)?.name ?? t('Преподаватель не указан')}
-                      </td>
+                      <td>{teacherNames(l, snapshot.payload) ?? t('Преподаватель не указан')}</td>
                       <td>{t(FREQUENCIES[l.frequency])}</td>
                       <td>
                         {l.start}–{l.end}

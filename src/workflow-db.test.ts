@@ -1,3 +1,4 @@
+import universitySql from '../supabase/migrations/202611200001_university.sql?raw';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import accountsSql from '../supabase/migrations/202610300001_accounts.sql?raw';
@@ -62,11 +63,35 @@ beforeAll(async () => {
     JSON.stringify(demo),
   ]);
   await db.exec(workflowSql);
+  await db.exec(universitySql);
 }, 30000);
 afterAll(async () => {
   await db.close();
 });
 describe('PostgreSQL workflow and authorization', () => {
+  it('checks shared participants and room resources before publication', async () => {
+    const base = demo.lessons[0];
+    const shared = { ...base, extraGroups: ['g2'], assistants: ['t2'], seats: 25, computers: 25 };
+    const rooms = [{ name: base.room, seats: 30, computers: 30, screen: true }];
+    const payload = { ...demo, rooms, lessons: [shared] };
+    await owner('select public.tempo_validate($1)', [JSON.stringify(payload)]);
+    for (const clash of [
+      { groupId: 'g2', teacherId: 't3' },
+      { groupId: 'g3', teacherId: 't2' },
+    ]) {
+      const other = { ...base, ...clash, id: 'other', room: 'B' };
+      await expect(
+        owner('select public.tempo_validate($1)', [
+          JSON.stringify({ ...payload, lessons: [shared, other] }),
+        ]),
+      ).rejects.toMatchObject({ code: '23P01' });
+    }
+    await expect(
+      owner('select public.tempo_validate($1)', [
+        JSON.stringify({ ...payload, rooms: [{ ...rooms[0], computers: 24 }] }),
+      ]),
+    ).rejects.toMatchObject({ code: '22023' });
+  });
   it('denies students, enforces own lessons and hides other profiles', async () => {
     await expect(
       as(student, 'select public.submit_schedule_request($1,1)', [JSON.stringify(proposal)]),

@@ -23,7 +23,18 @@ export interface Group {
   name: string;
   description: string;
 }
+export interface Room {
+  name: string;
+  seats: number;
+  computers: number;
+  screen: boolean;
+}
 export interface Lesson {
+  extraGroups?: string[];
+  assistants?: string[];
+  seats?: number;
+  computers?: number;
+  screen?: boolean;
   id: string;
   subjectId: string;
   teacherId?: string;
@@ -56,6 +67,7 @@ export interface Data {
   groups: Group[];
   lessons: Lesson[];
   exceptions?: LessonException[];
+  rooms?: Room[];
 }
 export const STORAGE_KEY = 'tempo-campus-v1';
 export const DAYS = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
@@ -349,6 +361,22 @@ const validTime = (value: unknown): value is string =>
   typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 const string = (value: unknown, max = 200): value is string =>
   typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+export const groupsOf = (l: Lesson) => [l.groupId, ...(l.extraGroups ?? [])];
+export const teachersOf = (l: Lesson, d: Data) =>
+  [lessonTeacher(l, d)?.id, ...(l.assistants ?? [])].filter((v): v is string => !!v);
+export const groupNames = (l: Lesson, d: Data) =>
+  groupsOf(l)
+    .map((id) => d.groups.find((g) => g.id === id)?.name)
+    .join(', ');
+export const teacherNames = (l: Lesson, d: Data) =>
+  teachersOf(l, d)
+    .map((id) => d.teachers.find((t) => t.id === id)?.name)
+    .join(', ');
+const intersect = (a: string[], b: string[]) => a.some((id) => b.includes(id));
+export const roomKey = (name: string) => name.trim().toLowerCase();
+export function fits(l: Lesson, r: Room) {
+  return (l.seats ?? 0) <= r.seats && (l.computers ?? 0) <= r.computers && (!l.screen || r.screen);
+}
 export function validateLesson(lesson: Lesson, data: Data): string | null {
   if (
     !data.subjects.some((s) => s.id === lesson.subjectId) ||
@@ -378,7 +406,29 @@ export function validateLesson(lesson: Lesson, data: Data): string | null {
     return 'Заметка должна быть не длиннее 1000 символов.';
   if (lesson.teacherId && !data.teachers.some((teacher) => teacher.id === lesson.teacherId))
     return 'Выберите преподавателя из справочника.';
-  const teacherId = lessonTeacher(lesson, data)?.id;
+  for (const [ids, catalog] of [
+    [lesson.extraGroups, data.groups],
+    [lesson.assistants, data.teachers],
+  ] as const) {
+    if (
+      ids !== undefined &&
+      (!Array.isArray(ids) || ids.some((id) => !catalog.some((x) => x.id === id)))
+    )
+      return 'Проверьте участников занятия';
+  }
+  if ([groupsOf(lesson), teachersOf(lesson, data)].some((ids) => new Set(ids).size !== ids.length))
+    return 'Проверьте участников занятия';
+  if (
+    [lesson.seats, lesson.computers].some(
+      (n) => n !== undefined && (!Number.isSafeInteger(n) || n < 0),
+    ) ||
+    (lesson.screen !== undefined && typeof lesson.screen !== 'boolean')
+  )
+    return 'Проверьте требования к аудитории';
+  const room = data.rooms?.find((r) => roomKey(r.name) === roomKey(lesson.room));
+  if (room && !fits(lesson, room)) return 'Аудитория не соответствует требованиям';
+  if (!room && (lesson.seats || lesson.computers || lesson.screen))
+    return 'Заполните паспорт аудитории';
   const collision = data.lessons.find(
     (other) =>
       other.id !== lesson.id &&
@@ -388,18 +438,17 @@ export function validateLesson(lesson: Lesson, data: Data): string | null {
         other.frequency === lesson.frequency) &&
       minutes(lesson.start) < minutes(other.end) &&
       minutes(lesson.end) > minutes(other.start) &&
-      (other.groupId === lesson.groupId ||
+      (intersect(groupsOf(other), groupsOf(lesson)) ||
         other.room.trim().toLocaleLowerCase() === lesson.room.trim().toLocaleLowerCase() ||
-        (teacherId && lessonTeacher(other, data)?.id === teacherId)),
+        intersect(teachersOf(other, data), teachersOf(lesson, data))),
   );
   if (!collision) return null;
   const subject = data.subjects.find((s) => s.id === collision.subjectId);
-  const reason =
-    collision.groupId === lesson.groupId
-      ? 'У группы уже есть занятие'
-      : collision.room.trim().toLocaleLowerCase() === lesson.room.trim().toLocaleLowerCase()
-        ? 'Аудитория уже занята'
-        : 'Преподаватель уже занят';
+  const reason = intersect(groupsOf(collision), groupsOf(lesson))
+    ? 'У группы уже есть занятие'
+    : collision.room.trim().toLocaleLowerCase() === lesson.room.trim().toLocaleLowerCase()
+      ? 'Аудитория уже занята'
+      : 'Преподаватель уже занят';
   return `${reason}: ${subject?.name}, ${collision.start}–${collision.end}.`;
 }
 
@@ -457,6 +506,23 @@ export function parseData(raw: string): Data {
     )
   )
     return fail();
+  if (
+    data.rooms !== undefined &&
+    (!Array.isArray(data.rooms) ||
+      data.rooms.some(
+        (r) =>
+          !r ||
+          !string(r.name, 60) ||
+          !Number.isSafeInteger(r.seats) ||
+          r.seats < 1 ||
+          !Number.isSafeInteger(r.computers) ||
+          r.computers < 0 ||
+          r.computers > r.seats ||
+          typeof r.screen !== 'boolean',
+      ) ||
+      new Set(data.rooms.map((r) => roomKey(r.name))).size !== data.rooms.length)
+  )
+    throw new Error('Проверьте паспорт аудитории');
   for (const lesson of data.lessons) {
     if (lesson.teacherId !== undefined && typeof lesson.teacherId !== 'string') return fail();
     const error = validateLesson(lesson, data);
@@ -522,6 +588,10 @@ export function lessonsInWeek(data: Data, week: Date): Lesson[] {
 export function exceptionConflicts(data: Data, change: LessonException): string[] {
   const lesson = data.lessons.find((l) => l.id === change.lessonId);
   if (!lesson || change.cancelled) return [];
+  const room = data.rooms?.find((r) => roomKey(r.name) === roomKey(change.room));
+  const unsuitable = room
+    ? !fits(lesson, room)
+    : !!(lesson.seats || lesson.computers || lesson.screen);
   const others = lessonsOn(data, change.date).filter(
     (l) => !(l.templateId === change.lessonId && l.originalDate === change.originalDate),
   );
@@ -529,15 +599,14 @@ export function exceptionConflicts(data: Data, change: LessonException): string[
     (l) => minutes(l.start) < minutes(change.end) && minutes(change.start) < minutes(l.end),
   );
   return [
-    overlaps.some((l) => l.groupId === lesson.groupId) ? 'У группы уже есть занятие' : '',
+    unsuitable ? 'Аудитория не соответствует требованиям' : '',
+    overlaps.some((l) => intersect(groupsOf(l), groupsOf(lesson)))
+      ? 'У группы уже есть занятие'
+      : '',
     overlaps.some((l) => l.room.trim().toLowerCase() === change.room.trim().toLowerCase())
       ? 'Аудитория уже занята'
       : '',
-    overlaps.some(
-      (l) =>
-        lessonTeacher(l, data)?.id &&
-        lessonTeacher(l, data)?.id === lessonTeacher(lesson, data)?.id,
-    )
+    overlaps.some((l) => intersect(teachersOf(l, data), teachersOf(lesson, data)))
       ? 'Преподаватель уже занят'
       : '',
   ].filter(Boolean);
@@ -748,7 +817,7 @@ export function calendarExport(
       ? parseDate(lesson.occurrenceDate)
       : addDays(week, lesson.day);
     const subject = data.subjects.find((s) => s.id === lesson.subjectId)!;
-    const teacher = lessonTeacher(lesson, data);
+    const teacher = teacherNames(lesson, data);
     lines.push(
       'BEGIN:VEVENT',
       `UID:${lesson.id}-${stamp(day, lesson.start)}@tempo`,
@@ -760,7 +829,7 @@ export function calendarExport(
       `DTEND:${stamp(day, lesson.end)}`,
       `SUMMARY:${escape(subject.name)}`,
       `LOCATION:${escape(`${t('Аудитория')} ${lesson.room}`)}`,
-      `DESCRIPTION:${escape(`${t(lesson.type)} · ${teacher?.name ?? t('Преподаватель не указан')}\n${lesson.note}`)}`,
+      `DESCRIPTION:${escape(`${t(lesson.type)} · ${teacher || t('Преподаватель не указан')}\n${lesson.note}`)}`,
       'END:VEVENT',
     );
   }
